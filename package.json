@@ -1,8 +1,8 @@
 {
-  "name": "my-replicate-app",
+  "name": "image-edit-bot",
   "version": "1.0.0",
   "private": true,
-  "description": "Telegram bot for Replicate's API",
+  "description": "Image Edit Bot",
   "main": "index.js",
   "type": "module",
   "scripts": {
