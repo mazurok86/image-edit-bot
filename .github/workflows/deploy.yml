@@ -22,24 +22,23 @@ jobs:
       - name: Install dependencies (CI check)
         run: npm ci
 
-      - name: Deploy files to server via rsync
-        uses: burnett01/rsync-deployments@v7
-        with:
-          switches: -avzr --delete --exclude=".git" --exclude=".github" --exclude=".env"
-          path: ./
-          remote_path: ${{ secrets.PROJECT_DIRECTORY }}
-          remote_host: ${{ secrets.SSH_HOST }}
-          remote_user: ${{ secrets.SSH_USER }}
-          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+      - name: Deploy to server
+        env:
+          SSH_USER: ${{ secrets.SSH_USER }}
+          SSH_HOST: ${{ secrets.SSH_HOST }}
+          SSH_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+          PROJECT_DIRECTORY: ${{ secrets.PROJECT_DIRECTORY }}
+        run: |
+          mkdir -p ~/.ssh
+          echo "$SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          ssh-keyscan -H $SSH_HOST >> ~/.ssh/known_hosts
 
-      - name: Install production dependencies & restart PM2
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USER }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            cd ${{ secrets.PROJECT_FOLDER }}
+          rsync -avz --delete --exclude=".git" --exclude=".github" --exclude=".env" ./ $SSH_USER@$SSH_HOST:$PROJECT_DIRECTORY
+
+          ssh -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST bash -c "'
+            cd $PROJECT_DIRECTORY
             npm ci --omit=dev
             pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
             pm2 save
+          '"
