@@ -39,6 +39,6 @@ jobs:
           ssh -i ~/.ssh/id_ed25519 $SSH_USER@$SSH_HOST bash -c "'
             cd $PROJECT_DIRECTORY
             npm ci --omit=dev
-            pm2 reload ecosystem.config.js --env production || pm2 start ecosystem.config.js --env production
+            pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save
           '"
