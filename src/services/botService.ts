@@ -261,6 +261,9 @@ export class BotService {
     if (hasVideo) {
       text += `${BOT_TEXTS.UPLOADED_VIDEOS}${chat.videos.length}\n`
     }
+    if (hasImages || hasVideo) {
+      text += '\n'
+    }
     text += BOT_TEXTS.SELECT_MODEL
 
     await this.sendMessage(
