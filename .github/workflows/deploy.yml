@@ -48,3 +48,18 @@ jobs:
             pm2 reload ecosystem.config.cjs --env production || pm2 start ecosystem.config.cjs --env production
             pm2 save
           '"
+
+      - name: Notify Telegram
+        uses: appleboy/telegram-action@v0.7.0
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: "✅ Deployment of *image-edit-bot* completed successfully!\nCommit: `${{ github.sha }}`"
+
+      - name: Notify failure
+        if: failure()
+        uses: appleboy/telegram-action@v0.7.0
+        with:
+          to: ${{ secrets.TELEGRAM_CHAT_ID }}
+          token: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          message: "❌ Deployment of *image-edit-bot* failed! Check workflow logs."
