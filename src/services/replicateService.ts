@@ -51,7 +51,7 @@ export class ReplicateService {
       const buf = Buffer.from(await buffer(output))
       result.push({
         buffer: buf,
-        filename: `flux_${Date.now()}_${i}.jpg`,
+        filename: `seedream_${Date.now()}_${i}.jpg`,
         contentType: 'image/jpeg'
       })
     }
@@ -93,7 +93,7 @@ export class ReplicateService {
 
     return [{
       buffer: buf,
-      filename: `kling_${Date.now()}.mp4`,
+      filename: `kling_mc_${Date.now()}.mp4`,
       contentType: 'video/mp4'
     }]
   }
