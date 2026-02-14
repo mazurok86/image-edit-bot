@@ -3,22 +3,26 @@ import TelegramBot from 'node-telegram-bot-api'
 import { ChatStore } from './state/chatStore.js'
 import { ReplicateService } from './services/replicateService.js'
 import { BotService } from './services/botService.js'
+import { YandexTranslateService } from './services/yandexTranslateService.js'
 
 dotenv.config()
 
-if (process.env.REPLICATE_AUTH === undefined) throw new Error('REPLICATE_AUTH не задан')
-if (process.env.TELEGRAM_BOT_TOKEN === undefined) throw new Error('TELEGRAM_BOT_TOKEN не задан')
-if (process.env.ALLOWED_CHAT_IDS === undefined) throw new Error('ALLOWED_CHAT_IDS не задан')
+if (process.env.REPLICATE_AUTH === undefined) throw new Error('REPLICATE_AUTH is missing')
+if (process.env.TELEGRAM_BOT_TOKEN === undefined) throw new Error('TELEGRAM_BOT_TOKEN is missing')
+if (process.env.YANDEX_TRANSLATE_FOLDER_ID === undefined) throw new Error('YANDEX_TRANSLATE_FOLDER_ID is missing')
+if (process.env.YANDEX_TRANSLATE_API_KEY === undefined) throw new Error('YANDEX_TRANSLATE_API_KEY is missing')
+if (process.env.ALLOWED_CHAT_IDS === undefined) throw new Error('ALLOWED_CHAT_IDS is missing')
 
-const allowedChatIds = process.env.ALLOWED_CHAT_IDS.split(',').map(id => Number(id.trim()))
+const allowedChatIds = process.env.ALLOWED_CHAT_IDS.split(',').map((id) => Number(id.trim()))
 
 if (allowedChatIds.length === 0) {
-  throw new Error('ALLOWED_CHAT_IDS пуст')
+  throw new Error('ALLOWED_CHAT_IDS is empty')
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true })
 const store = new ChatStore()
+const yandexTranslateService = new YandexTranslateService(process.env.YANDEX_TRANSLATE_FOLDER_ID, process.env.YANDEX_TRANSLATE_API_KEY)
 const replicateService = new ReplicateService(process.env.REPLICATE_AUTH)
-const botService = new BotService(bot, store, replicateService, allowedChatIds)
+const botService = new BotService(bot, store, yandexTranslateService, replicateService, allowedChatIds)
 
 botService.start()

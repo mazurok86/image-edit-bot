@@ -7,54 +7,76 @@ import { ChatStore } from '../state/chatStore.js'
 import { FileType } from '../types/fileType.js'
 import { BOT_MODELS } from '../models/index.js'
 import { isAllowedImage, isAllowedVideo } from '../helpers/fileHelpers.js'
-import { ReplicateService } from './replicateService.js'
+import { BOT_TEXTS } from '../constants/botTexts.js'
+import { escapeMarkdownV2 } from '../helpers/stringHelpers.js'
+import type { ReplicateService } from './replicateService.js'
 import type { BotModel } from '../models/index.js'
 import type { FileOutput } from '../types/fileOutput.js'
 import type { ChatState } from '../types/chatState.js'
-import { BOT_TEXTS } from '../constants/botTexts.js'
-import { escapeMarkdownV2 } from '../helpers/stringHelpers.js'
+import type { YandexTranslateService } from './yandexTranslateService.js'
 
 export class BotService {
   private bot: TelegramBot
   private store: ChatStore
+  private yandexTranslateService: YandexTranslateService
   private replicateService: ReplicateService
   private allowedChatIds: number[]
-  private modelMap: Map<BotModel, (chat: ChatState) => Promise<FileOutput[]>>
+  private modelMap: Map<BotModel, (prompt: string, chat: ChatState) => Promise<FileOutput[]>>
 
   constructor(
     bot: TelegramBot,
     store: ChatStore,
+    yandexTranslateService: YandexTranslateService,
     replicateService: ReplicateService,
-    allowedChatIds: number[]
+    allowedChatIds: number[],
   ) {
     this.allowedChatIds = allowedChatIds
     this.bot = bot
     this.store = store
+    this.yandexTranslateService = yandexTranslateService
     this.replicateService = replicateService
 
-    this.modelMap = new Map<BotModel, (chat: ChatState) => Promise<FileOutput[]>>([
-      [BOT_MODELS.FLUX, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runFlux(chat.prompt, chat.images[chat.images.length - 1], 'match_input_image')
-      }],
-      [BOT_MODELS.FLUX_9_16, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runFlux(chat.prompt, chat.images[chat.images.length - 1], '9:16')
-      }],
-      [BOT_MODELS.SEEDREAM, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runSeedream4(chat.prompt, chat.images, '4:3')
-      }],
-      [BOT_MODELS.SEEDREAM_9_16, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runSeedream4(chat.prompt, chat.images, '9:16')
-      }],
-      [BOT_MODELS.KLING, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runKling(chat.prompt, chat.images[chat.images.length - 1])
-      }],
-      [BOT_MODELS.KLING_MC, async (chat: ChatState): Promise<FileOutput[]> => {
-        return await this.replicateService.runKlingMotionControl(
-          chat.prompt,
-          chat.images[chat.images.length - 1],
-          chat.videos[chat.videos.length - 1]
-        )
-      }]
+    this.modelMap = new Map<BotModel, (prompt: string, chat: ChatState) => Promise<FileOutput[]>>([
+      [
+        BOT_MODELS.FLUX,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux(prompt, chat.images[chat.images.length - 1], 'match_input_image')
+        },
+      ],
+      [
+        BOT_MODELS.FLUX_9_16,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux(prompt, chat.images[chat.images.length - 1], '9:16')
+        },
+      ],
+      [
+        BOT_MODELS.SEEDREAM,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runSeedream4(prompt, chat.images, '4:3')
+        },
+      ],
+      [
+        BOT_MODELS.SEEDREAM_9_16,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runSeedream4(prompt, chat.images, '9:16')
+        },
+      ],
+      [
+        BOT_MODELS.KLING,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runKling(prompt, chat.images[chat.images.length - 1])
+        },
+      ],
+      [
+        BOT_MODELS.KLING_MC,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runKlingMotionControl(
+            prompt,
+            chat.images[chat.images.length - 1],
+            chat.videos[chat.videos.length - 1],
+          )
+        },
+      ],
     ])
   }
 
@@ -64,7 +86,10 @@ export class BotService {
   }
 
   private async sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message> {
-    return await this.bot.sendMessage(chatId, text, { ...options, parse_mode: 'MarkdownV2' })
+    return await this.bot.sendMessage(chatId, text, {
+      ...options,
+      parse_mode: 'MarkdownV2',
+    })
   }
 
   private async handleMessage(msg: Message): Promise<void> {
@@ -157,7 +182,8 @@ export class BotService {
 
       await this.sendMessage(chatId, `${BOT_TEXTS.USING_MODEL}${escapeMarkdownV2(model)}`)
 
-      const files = await runner(chat)
+      const prompt = await this.yandexTranslateService.translate(chat.prompt)
+      const files = await runner(prompt, chat)
 
       for (const { buffer, filename, contentType } of files) {
         await this.bot.sendChatAction(chatId, 'upload_document')
@@ -211,17 +237,13 @@ export class BotService {
     }
 
     if (text !== null) {
-      await this.sendMessage(
-        chatId,
-        text,
-        {
-          reply_markup: {
-            keyboard,
-            resize_keyboard: true,
-            one_time_keyboard: true,
-          },
+      await this.sendMessage(chatId, text, {
+        reply_markup: {
+          keyboard,
+          resize_keyboard: true,
+          one_time_keyboard: true,
         },
-      )
+      })
       return false
     }
 
@@ -272,17 +294,13 @@ export class BotService {
     }
     text += BOT_TEXTS.SELECT_MODEL
 
-    await this.sendMessage(
-      chatId,
-      text,
-      {
-        reply_markup: {
-          keyboard,
-          resize_keyboard: true,
-          one_time_keyboard: true,
-        },
+    await this.sendMessage(chatId, text, {
+      reply_markup: {
+        keyboard,
+        resize_keyboard: true,
+        one_time_keyboard: true,
       },
-    )
+    })
   }
 
   private async handleDocument(chatId: number, doc: Document): Promise<void> {
@@ -298,7 +316,11 @@ export class BotService {
 
       if (mime_type === 'image/heic') {
         const nodeBuffer = await buffer(this.bot.getFileStream(file_id))
-        const output = await convert({ buffer: nodeBuffer as unknown as ArrayBufferLike, format: 'JPEG', quality: 1 })
+        const output = await convert({
+          buffer: nodeBuffer as unknown as ArrayBufferLike,
+          format: 'JPEG',
+          quality: 1,
+        })
 
         this.store.addFile(chatId, Buffer.from(output), FileType.Image)
         console.log(`[${chatId}] Image added.`)

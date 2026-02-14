@@ -18,7 +18,7 @@ export class ChatStore {
       videos: [],
       timeout: undefined,
       responseTimeout: undefined,
-      busy: false
+      busy: false,
     }
 
     this.chats.set(chatId, created)

@@ -17,17 +17,21 @@ export class ReplicateService {
       input_image: image,
       aspect_ratio,
       output_format: 'jpg',
-      safety_tolerance: 2
+      safety_tolerance: 2,
     }
 
-    const output = await this.replicate.run(REPLICATE_MODELS.FLUX, { input }) as ReadableStream
+    const output = (await this.replicate.run(REPLICATE_MODELS.FLUX, {
+      input,
+    })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
 
-    return [{
-      buffer: buf,
-      filename: `flux_${Date.now()}.jpg`,
-      contentType: 'image/jpeg'
-    }]
+    return [
+      {
+        buffer: buf,
+        filename: `flux_${Date.now()}.jpg`,
+        contentType: 'image/jpeg',
+      },
+    ]
   }
 
   async runSeedream4(prompt: string, images: Array<Buffer | string>, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
@@ -39,10 +43,12 @@ export class ReplicateService {
       height: 2048,
       aspect_ratio,
       enhance_prompt: true,
-      sequential_image_generation: 'disabled'
+      sequential_image_generation: 'disabled',
     }
 
-    const outputs = await this.replicate.run(REPLICATE_MODELS.SEEDREAM, { input }) as ReadableStream[]
+    const outputs = (await this.replicate.run(REPLICATE_MODELS.SEEDREAM, {
+      input,
+    })) as ReadableStream[]
     const result: FileOutput[] = []
 
     let i = 0
@@ -52,7 +58,7 @@ export class ReplicateService {
       result.push({
         buffer: buf,
         filename: `seedream_${Date.now()}_${i}.jpg`,
-        contentType: 'image/jpeg'
+        contentType: 'image/jpeg',
       })
     }
 
@@ -65,17 +71,21 @@ export class ReplicateService {
       start_image: image,
       mode: 'standard',
       duration: 5,
-      negative_prompt: ''
+      negative_prompt: '',
     }
 
-    const output = await this.replicate.run(REPLICATE_MODELS.KLING, { input }) as ReadableStream
+    const output = (await this.replicate.run(REPLICATE_MODELS.KLING, {
+      input,
+    })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
 
-    return [{
-      buffer: buf,
-      filename: `kling_${Date.now()}.mp4`,
-      contentType: 'video/mp4'
-    }]
+    return [
+      {
+        buffer: buf,
+        filename: `kling_${Date.now()}.mp4`,
+        contentType: 'video/mp4',
+      },
+    ]
   }
 
   async runKlingMotionControl(prompt: string, image: Buffer | string | undefined, video: string | undefined): Promise<FileOutput[]> {
@@ -85,16 +95,20 @@ export class ReplicateService {
       video,
       mode: 'pro',
       keep_original_sound: true,
-      character_orientation: 'image'
+      character_orientation: 'image',
     }
 
-    const output = await this.replicate.run(REPLICATE_MODELS.KLING_MC, { input }) as ReadableStream
+    const output = (await this.replicate.run(REPLICATE_MODELS.KLING_MC, {
+      input,
+    })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
 
-    return [{
-      buffer: buf,
-      filename: `kling_mc_${Date.now()}.mp4`,
-      contentType: 'video/mp4'
-    }]
+    return [
+      {
+        buffer: buf,
+        filename: `kling_mc_${Date.now()}.mp4`,
+        contentType: 'video/mp4',
+      },
+    ]
   }
 }
