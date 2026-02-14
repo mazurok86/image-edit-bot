@@ -71,6 +71,7 @@ export class BotService {
     const chatId = msg.chat.id
 
     if (!this.allowedChatIds.includes(chatId)) {
+      console.log(`[${chatId}] Bye.`)
       await this.sendMessage(chatId, BOT_TEXTS.BYE)
       return
     }
@@ -79,11 +80,13 @@ export class BotService {
     const chat = this.store.get(chatId)
 
     if (text === BOT_TEXTS.START) {
+      console.log(`[${chatId}] Start.`)
       await this.sendMessage(chatId, BOT_TEXTS.GREETING)
       return
     }
 
     if (text === BOT_TEXTS.CLEAR) {
+      console.log(`[${chatId}] Clear.`)
       this.store.clear(chatId)
       await this.sendMessage(chatId, BOT_TEXTS.FILES_CLEARED)
       this.schedulePrompt(chatId)
@@ -117,7 +120,8 @@ export class BotService {
 
     const prompt = text === undefined ? (caption === undefined ? '' : caption.trim()) : text.trim()
     if (prompt !== '') {
-        chat.prompt = prompt
+      console.log(`[${chatId}] Prompt set.`)
+      chat.prompt = prompt
     }
 
     this.schedulePrompt(chatId)
@@ -131,6 +135,7 @@ export class BotService {
 
     const chat = this.store.get(chatId)
     if (chat.busy) {
+      console.log(`[${chatId}] Busy.`)
       await this.sendMessage(chatId, BOT_TEXTS.BUSY)
       return
     }
@@ -167,6 +172,7 @@ export class BotService {
         )
       }
     } catch (e) {
+      console.log(`[${chatId}] Generation failed.`)
       console.log(e)
       await this.sendMessage(chatId, BOT_TEXTS.ERROR)
     } finally {
@@ -295,16 +301,20 @@ export class BotService {
         const output = await convert({ buffer: nodeBuffer as unknown as ArrayBufferLike, format: 'JPEG', quality: 1 })
 
         this.store.addFile(chatId, Buffer.from(output), FileType.Image)
+        console.log(`[${chatId}] Image added.`)
       } else if (isAllowedVideo(mime_type, file_size)) {
         const link = await this.bot.getFileLink(file_id)
         this.store.addFile(chatId, link, FileType.Video)
+        console.log(`[${chatId}] Video added.`)
       } else {
         const link = await this.bot.getFileLink(file_id)
         this.store.addFile(chatId, link, FileType.Image)
+        console.log(`[${chatId}] Image added.`)
       }
 
       this.schedulePrompt(chatId)
     } catch {
+      console.log(`[${chatId}] Invalid file.`)
       await this.sendMessage(chatId, BOT_TEXTS.INVALID_FILE)
     }
   }
@@ -323,8 +333,12 @@ export class BotService {
       const fileLink = await this.bot.getFileLink(photo.file_id)
 
       this.store.addFile(chatId, fileLink, FileType.Image)
+
+      console.log(`[${chatId}] Image added.`)
+
       this.schedulePrompt(chatId, 500)
     } catch {
+      console.log(`[${chatId}] Invalid image.`)
       await this.sendMessage(chatId, BOT_TEXTS.INVALID_IMAGE)
     }
   }
@@ -342,8 +356,12 @@ export class BotService {
       const fileLink = await this.bot.getFileLink(file_id)
 
       this.store.addFile(chatId, fileLink, FileType.Video)
+
+      console.log(`[${chatId}] Video added.`)
+
       this.schedulePrompt(chatId, 500)
     } catch {
+      console.log(`[${chatId}] Invalid video.`)
       await this.sendMessage(chatId, BOT_TEXTS.INVALID_VIDEO)
     }
   }
