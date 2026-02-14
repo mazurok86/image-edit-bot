@@ -291,9 +291,8 @@ export class BotService {
       }
 
       if (mime_type === 'image/heic') {
-        const streamBuffer = await buffer(this.bot.getFileStream(file_id))
-        const arrayBuffer = streamBuffer.buffer.slice(streamBuffer.byteOffset, streamBuffer.byteOffset + streamBuffer.byteLength)
-        const output = await convert({ buffer: arrayBuffer, format: 'JPEG', quality: 1 })
+        const nodeBuffer = await buffer(this.bot.getFileStream(file_id))
+        const output = await convert({ buffer: nodeBuffer as unknown as ArrayBufferLike, format: 'JPEG', quality: 1 })
 
         this.store.addFile(chatId, Buffer.from(output), FileType.Image)
       } else if (isAllowedVideo(mime_type, file_size)) {
