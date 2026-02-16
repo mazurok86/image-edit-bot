@@ -62,6 +62,12 @@ export class BotService {
         },
       ],
       [
+        BOT_MODELS.NANO_BANANA_PRO,
+        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+          return await this.replicateService.runNanoBananaPro(prompt, chat.images, 'match_input_image')
+        },
+      ],
+      [
         BOT_MODELS.KLING,
         async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
           return await this.replicateService.runKling(prompt, chat.images[chat.images.length - 1])
@@ -279,7 +285,7 @@ export class BotService {
     } else {
       keyboard.push([{ text: BOT_MODELS.FLUX }, { text: BOT_MODELS.FLUX_9_16 }])
       keyboard.push([{ text: BOT_MODELS.SEEDREAM }, { text: BOT_MODELS.SEEDREAM_9_16 }])
-      keyboard.push([{ text: BOT_MODELS.KLING }])
+      keyboard.push([{ text: BOT_MODELS.KLING }, { text: BOT_MODELS.NANO_BANANA_PRO }])
     }
 
     let text = ''

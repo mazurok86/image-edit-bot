@@ -65,6 +65,30 @@ export class ReplicateService {
     return result
   }
 
+  async runNanoBananaPro(prompt: string, images: Array<Buffer | string>, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+    const input = {
+      prompt,
+      resolution: '2K',
+      image_input: images,
+      aspect_ratio,
+      output_format: 'jpg',
+      safety_filter_level: 'block_only_high',
+    }
+
+    const output = (await this.replicate.run(REPLICATE_MODELS.NANO_BANANA_PRO, {
+      input,
+    })) as ReadableStream
+    const buf = Buffer.from(await buffer(output))
+
+    return [
+      {
+        buffer: buf,
+        filename: `banana_${Date.now()}.jpg`,
+        contentType: 'image/jpeg',
+      },
+    ]
+  }
+
   async runKling(prompt: string, image: Buffer | string | undefined): Promise<FileOutput[]> {
     const input = {
       prompt,

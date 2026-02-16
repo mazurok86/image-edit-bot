@@ -28,7 +28,7 @@ export class YandexTranslateService {
           targetLanguageCode: 'en',
         }),
       })
-      console.log(res)
+
       if (!res.ok) {
         throw new Error(`Translation error: ${res.status} ${res.statusText}`)
       }
