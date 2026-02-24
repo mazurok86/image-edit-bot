@@ -1,10 +1,6 @@
 import TelegramBot from 'node-telegram-bot-api'
 import type { Message, Document, PhotoSize, Video, KeyboardButton } from 'node-telegram-bot-api'
-import { buffer } from 'node:stream/consumers'
-import convert from 'heic-convert'
-
 import { ChatStore } from '../state/chatStore.js'
-import { FileType } from '../types/fileType.js'
 import { BOT_MODELS } from '../models/index.js'
 import { isAllowedImage, isAllowedVideo } from '../helpers/fileHelpers.js'
 import { BOT_TEXTS } from '../constants/botTexts.js'
@@ -12,8 +8,10 @@ import { escapeMarkdownV2 } from '../helpers/stringHelpers.js'
 import type { ReplicateService } from './replicateService.js'
 import type { BotModel } from '../models/index.js'
 import type { FileOutput } from '../types/fileOutput.js'
-import type { ChatState } from '../types/chatState.js'
 import type { YandexTranslateService } from './yandexTranslateService.js'
+import { getChatImages, getChatVideos } from '../helpers/chatHelpers.js'
+import type { ChatState } from '../types/chatState.js'
+import type { Files } from '../types/files.js'
 
 export class BotService {
   private bot: TelegramBot
@@ -21,7 +19,7 @@ export class BotService {
   private yandexTranslateService: YandexTranslateService
   private replicateService: ReplicateService
   private allowedChatIds: number[]
-  private modelMap: Map<BotModel, (prompt: string, chat: ChatState) => Promise<FileOutput[]>>
+  private modelMap: Map<BotModel, (prompt: string, files: Files) => Promise<FileOutput[]>>
 
   constructor(
     bot: TelegramBot,
@@ -36,50 +34,50 @@ export class BotService {
     this.yandexTranslateService = yandexTranslateService
     this.replicateService = replicateService
 
-    this.modelMap = new Map<BotModel, (prompt: string, chat: ChatState) => Promise<FileOutput[]>>([
+    this.modelMap = new Map<BotModel, (prompt: string, files: Files) => Promise<FileOutput[]>>([
       [
         BOT_MODELS.FLUX,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runFlux(prompt, chat.images[chat.images.length - 1], 'match_input_image')
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux(prompt, files.images[files.images.length - 1], 'match_input_image')
         },
       ],
       [
         BOT_MODELS.FLUX_9_16,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runFlux(prompt, chat.images[chat.images.length - 1], '9:16')
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux(prompt, files.images[files.images.length - 1], '9:16')
         },
       ],
       [
         BOT_MODELS.SEEDREAM,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runSeedream4(prompt, chat.images, '4:3')
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runSeedream4(prompt, files.images, '4:3')
         },
       ],
       [
         BOT_MODELS.SEEDREAM_9_16,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runSeedream4(prompt, chat.images, '9:16')
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runSeedream4(prompt, files.images, '9:16')
         },
       ],
       [
         BOT_MODELS.NANO_BANANA_PRO,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runNanoBananaPro(prompt, chat.images, 'match_input_image')
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runNanoBananaPro(prompt, files.images, 'match_input_image')
         },
       ],
       [
         BOT_MODELS.KLING,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
-          return await this.replicateService.runKling(prompt, chat.images[chat.images.length - 1])
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runKling(prompt, files.images[files.images.length - 1])
         },
       ],
       [
         BOT_MODELS.KLING_MC,
-        async (prompt: string, chat: ChatState): Promise<FileOutput[]> => {
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
           return await this.replicateService.runKlingMotionControl(
             prompt,
-            chat.images[chat.images.length - 1],
-            chat.videos[chat.videos.length - 1],
+            files.images[files.images.length - 1],
+            files.videos[files.videos.length - 1],
           )
         },
       ],
@@ -89,6 +87,15 @@ export class BotService {
   public start(): void {
     console.log('Bot running...')
     this.bot.on('message', (msg: Message) => this.handleMessage(msg))
+  }
+
+  private async uploadChatFiles(chat: ChatState): Promise<void> {
+    for (const file of chat.files) {
+      if (file.mimeType === 'image/heic') {
+        file.url = await this.replicateService.uploadHeicImage(file.url)
+        file.mimeType = 'image/jpeg'
+      }
+    }
   }
 
   private async sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message> {
@@ -144,7 +151,7 @@ export class BotService {
       return
     }
 
-    if (chat.images.length === 0 && chat.videos.length === 0) {
+    if (chat.files.length === 0) {
       await this.sendMessage(chatId, BOT_TEXTS.NO_FILES)
       return
     }
@@ -187,9 +194,14 @@ export class BotService {
       }
 
       await this.sendMessage(chatId, `${BOT_TEXTS.USING_MODEL}${escapeMarkdownV2(model)}`)
+      await this.uploadChatFiles(chat)
 
       const prompt = await this.yandexTranslateService.translate(chat.prompt)
-      const files = await runner(prompt, chat)
+
+      const files = await runner(prompt, {
+        images: getChatImages(chat),
+        videos: getChatVideos(chat),
+      })
 
       for (const { buffer, filename, contentType } of files) {
         await this.bot.sendChatAction(chatId, 'upload_document')
@@ -220,19 +232,22 @@ export class BotService {
     const keyboard: KeyboardButton[][] = []
     let text: string | null = null
 
+    const imagesLength = getChatImages(chat).length
+    const videosLength = getChatVideos(chat).length
+
     const hasPrompt = chat.prompt !== ''
-    const hasImages = chat.images.length > 0
-    const hasVideo = chat.videos.length > 0
+    const hasImages = imagesLength > 0
+    const hasVideo = videosLength > 0
 
     if (!hasImages && !hasVideo) {
       text = BOT_TEXTS.FILES_REQUIRED
     } else if ((!hasPrompt && !hasVideo) || (hasVideo && !hasImages)) {
       text = ''
       if (hasImages) {
-        text += `${BOT_TEXTS.UPLOADED_IMAGES}${chat.images.length}\n`
+        text += `${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}\n`
       }
       if (hasVideo) {
-        text += `${BOT_TEXTS.UPLOADED_VIDEOS}${chat.videos.length}\n`
+        text += `${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}\n`
       }
       if (hasVideo && !hasImages) {
         text += BOT_TEXTS.UPLOAD_IMAGE
@@ -274,8 +289,10 @@ export class BotService {
     }
 
     const chat = this.store.get(chatId)
-    const hasImages = chat.images.length > 0
-    const hasVideo = chat.videos.length > 0
+    const imagesLength = getChatImages(chat).length
+    const videosLength = getChatVideos(chat).length
+    const hasImages = imagesLength > 0
+    const hasVideo = videosLength > 0
     const keyboard: KeyboardButton[][] = []
 
     keyboard.push([{ text: BOT_TEXTS.CLEAR }])
@@ -290,10 +307,10 @@ export class BotService {
 
     let text = ''
     if (hasImages) {
-      text += `${BOT_TEXTS.UPLOADED_IMAGES}${chat.images.length}\n`
+      text += `${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}\n`
     }
     if (hasVideo) {
-      text += `${BOT_TEXTS.UPLOADED_VIDEOS}${chat.videos.length}\n`
+      text += `${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}\n`
     }
     if (hasImages || hasVideo) {
       text += '\n'
@@ -320,25 +337,9 @@ export class BotService {
         throw new Error()
       }
 
-      if (mime_type === 'image/heic') {
-        const nodeBuffer = await buffer(this.bot.getFileStream(file_id))
-        const output = await convert({
-          buffer: nodeBuffer as unknown as ArrayBufferLike,
-          format: 'JPEG',
-          quality: 1,
-        })
-
-        this.store.addFile(chatId, Buffer.from(output), FileType.Image)
-        console.log(`[${chatId}] Image added.`)
-      } else if (isAllowedVideo(mime_type, file_size)) {
-        const link = await this.bot.getFileLink(file_id)
-        this.store.addFile(chatId, link, FileType.Video)
-        console.log(`[${chatId}] Video added.`)
-      } else {
-        const link = await this.bot.getFileLink(file_id)
-        this.store.addFile(chatId, link, FileType.Image)
-        console.log(`[${chatId}] Image added.`)
-      }
+      const link = await this.bot.getFileLink(file_id)
+      this.store.addFile(chatId, link, mime_type)
+      console.log(`[${chatId}] File added.`)
 
       this.schedulePrompt(chatId)
     } catch {
@@ -360,7 +361,7 @@ export class BotService {
 
       const fileLink = await this.bot.getFileLink(photo.file_id)
 
-      this.store.addFile(chatId, fileLink, FileType.Image)
+      this.store.addFile(chatId, fileLink, 'image/jpeg')
 
       console.log(`[${chatId}] Image added.`)
 
@@ -383,7 +384,7 @@ export class BotService {
 
       const fileLink = await this.bot.getFileLink(file_id)
 
-      this.store.addFile(chatId, fileLink, FileType.Video)
+      this.store.addFile(chatId, fileLink, mime_type)
 
       console.log(`[${chatId}] Video added.`)
 

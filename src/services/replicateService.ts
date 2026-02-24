@@ -1,4 +1,5 @@
 import Replicate from 'replicate'
+import convert from 'heic-convert'
 import { buffer } from 'node:stream/consumers'
 import { REPLICATE_MODELS } from '../models/index.js'
 import type { AspectRatio } from '../types/aspectRatio.js'
@@ -9,6 +10,21 @@ export class ReplicateService {
 
   constructor(auth: string) {
     this.replicate = new Replicate({ auth })
+  }
+
+  async uploadHeicImage(url: string): Promise<string> {
+    const response = await fetch(url)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch image: ${response.statusText}`)
+    }
+    const arrayBuffer = await response.arrayBuffer()
+    const output = await convert({
+      buffer: Buffer.from(arrayBuffer) as unknown as ArrayBuffer,
+      format: 'JPEG',
+      quality: 1,
+    })
+    const file = await this.replicate.files.create(new Blob([output], { type: 'image/jpeg' }))
+    return file.urls.get
   }
 
   async runFlux(prompt: string, image: Buffer | string | undefined, aspect_ratio: AspectRatio): Promise<FileOutput[]> {

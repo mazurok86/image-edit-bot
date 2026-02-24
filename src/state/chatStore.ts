@@ -1,6 +1,5 @@
-import { FileType } from '../types/fileType.js'
-import type { FileType as FileTypeType } from '../types/fileType.js'
 import type { ChatState } from '../types/chatState.js'
+import type { FileMimeType } from '../types/fileMimeType.js'
 
 export class ChatStore {
   private readonly chats = new Map<number, ChatState>()
@@ -14,8 +13,7 @@ export class ChatStore {
 
     const created: ChatState = {
       prompt: '',
-      images: [],
-      videos: [],
+      files: [],
       timeout: undefined,
       responseTimeout: undefined,
       busy: false,
@@ -33,11 +31,10 @@ export class ChatStore {
     }
 
     chat.prompt = ''
-    chat.images = []
-    chat.videos = []
+    chat.files = []
   }
 
-  addFile(chatId: number, file: string | Buffer, type: FileTypeType): void {
+  addFile(chatId: number, url: string, mimeType: FileMimeType): void {
     const chat = this.get(chatId)
 
     if (chat.timeout !== undefined) {
@@ -45,11 +42,10 @@ export class ChatStore {
       chat.timeout = undefined
     }
 
-    if (type === FileType.Image) {
-      chat.images.push(file)
-    } else {
-      chat.videos.push(file as string)
-    }
+    chat.files.push({
+      url,
+      mimeType,
+    })
 
     chat.timeout = setTimeout(() => {
       this.clear(chatId)

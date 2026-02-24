@@ -32,15 +32,21 @@ This is a Telegram bot that lets users edit images and generate videos using AI 
 **Request flow:**
 1. User sends a photo/video/document + text prompt via Telegram
 2. `BotService` handles all Telegram events and per-chat state
-3. When a model button is tapped, `BotService` calls `YandexTranslateService` to translate any Russian (Cyrillic) prompts to English
-4. `ReplicateService` runs the chosen Replicate model and returns file buffers
-5. Results are sent back as Telegram documents
+3. When a model button is tapped, `BotService.uploadChatFiles()` converts any HEIC files: fetches, converts to JPEG via `heic-convert`, uploads to Replicate Files API, and replaces the entry in `chat.files` in-place
+4. `BotService` calls `YandexTranslateService` to translate any Russian (Cyrillic) prompts to English
+5. `ReplicateService` runs the chosen Replicate model and returns file buffers
+6. Results are sent back as Telegram documents
 
 **Key services:**
-- `src/services/botService.ts` — core message handler; manages state flow, keyboard menus, file handling, HEIC conversion, and generation lifecycle
-- `src/services/replicateService.ts` — one method per Replicate model (Flux, Seedream, NanoBananaPro, Kling, Kling Motion Control)
+- `src/services/botService.ts` — core message handler; manages state flow, keyboard menus, file handling, HEIC upload, and generation lifecycle
+- `src/services/replicateService.ts` — one method per Replicate model (Flux, Seedream, NanoBananaPro, Kling, Kling Motion Control); also has `uploadHeicImage(url)` which fetches a HEIC URL, converts to JPEG, uploads via `replicate.files.create`, and returns a Replicate file URL
 - `src/services/yandexTranslateService.ts` — translates Cyrillic prompts to English before inference; skips translation if no Cyrillic detected
 - `src/state/chatStore.ts` — in-memory per-chat state (`ChatState`); files auto-expire after 1 hour of inactivity
+
+**File types:**
+- `src/types/chatFile.ts` — `ChatFile = { url: string, mimeType: FileMimeType }` — represents a user-uploaded file in chat state
+- `src/types/fileMimeType.ts` — union of allowed MIME types
+- `src/helpers/chatHelpers.ts` — `getChatImages(chat)` / `getChatVideos(chat)` — filter `chat.files` by MIME type and return URL arrays
 
 **Models (`src/models/index.ts`):**
 - `REPLICATE_MODELS` — actual Replicate model IDs (e.g. `black-forest-labs/flux-kontext-pro`)
