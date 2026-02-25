@@ -37,6 +37,18 @@ export class BotService {
 
     this.modelMap = new Map<BotModel, (prompt: string, files: Files) => Promise<FileOutput[]>>([
       [
+        BOT_MODELS.FLUX2,
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux2(prompt, files.images, 'match_input_image')
+        },
+      ],
+      [
+        BOT_MODELS.FLUX2_9_16,
+        async (prompt: string, files: Files): Promise<FileOutput[]> => {
+          return await this.replicateService.runFlux2(prompt, files.images, '9:16')
+        },
+      ],
+      [
         BOT_MODELS.FLUX,
         async (prompt: string, files: Files): Promise<FileOutput[]> => {
           return await this.replicateService.runFlux(prompt, files.images[files.images.length - 1], 'match_input_image')
@@ -305,6 +317,7 @@ export class BotService {
     if (hasVideo) {
       keyboard.push([{ text: BOT_MODELS.KLING_MC }])
     } else {
+      keyboard.push([{ text: BOT_MODELS.FLUX2 }, { text: BOT_MODELS.FLUX2_9_16 }])
       keyboard.push([{ text: BOT_MODELS.FLUX }, { text: BOT_MODELS.FLUX_9_16 }])
       keyboard.push([{ text: BOT_MODELS.SEEDREAM }, { text: BOT_MODELS.SEEDREAM_9_16 }])
       keyboard.push([{ text: BOT_MODELS.KLING }, { text: BOT_MODELS.NANO_BANANA_PRO }])

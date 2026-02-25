@@ -39,7 +39,32 @@ export class ReplicateService {
     return file.urls.get
   }
 
-  async runFlux(prompt: string, image: Buffer | string | undefined, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runFlux2(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+    const input = {
+      prompt,
+      input_images: images,
+      aspect_ratio,
+      output_format: 'jpg',
+      output_quality: 90,
+      resolution: '2 MP',
+      safety_tolerance: 5,
+    }
+
+    const output = (await this.run(REPLICATE_MODELS.FLUX2, {
+      input,
+    })) as ReadableStream
+    const buf = Buffer.from(await buffer(output))
+
+    return [
+      {
+        buffer: buf,
+        filename: `flux2_${Date.now()}.jpg`,
+        contentType: 'image/jpeg',
+      },
+    ]
+  }
+
+  async runFlux(prompt: string, image: string | undefined, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
     const input = {
       prompt,
       input_image: image,
@@ -62,7 +87,7 @@ export class ReplicateService {
     ]
   }
 
-  async runSeedream4(prompt: string, images: Array<Buffer | string>, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runSeedream4(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
     const input = {
       prompt,
       image_input: images,
@@ -93,7 +118,7 @@ export class ReplicateService {
     return result
   }
 
-  async runNanoBananaPro(prompt: string, images: Array<Buffer | string>, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runNanoBananaPro(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
     const input = {
       prompt,
       resolution: '2K',
@@ -117,7 +142,7 @@ export class ReplicateService {
     ]
   }
 
-  async runKling(prompt: string, image: Buffer | string | undefined): Promise<FileOutput[]> {
+  async runKling(prompt: string, image: string | undefined): Promise<FileOutput[]> {
     const input = {
       prompt,
       start_image: image,
@@ -140,7 +165,7 @@ export class ReplicateService {
     ]
   }
 
-  async runKlingMotionControl(prompt: string, image: Buffer | string | undefined, video: string | undefined): Promise<FileOutput[]> {
+  async runKlingMotionControl(prompt: string, image: string | undefined, video: string | undefined): Promise<FileOutput[]> {
     const input = {
       prompt,
       image,
