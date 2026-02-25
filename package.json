@@ -16,6 +16,7 @@
     "dotenv": "^17.2.4",
     "heic-convert": "^2.1.0",
     "node-telegram-bot-api": "^0.66.0",
+    "redis": "^5.11.0",
     "replicate": "*"
   },
   "devDependencies": {

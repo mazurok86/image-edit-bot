@@ -2,6 +2,7 @@ import Replicate from 'replicate'
 import convert from 'heic-convert'
 import { buffer } from 'node:stream/consumers'
 import { REPLICATE_MODELS } from '../models/index.js'
+import { ReplicateApiError } from '../errors/ReplicateApiError.js'
 import type { AspectRatio } from '../types/aspectRatio.js'
 import type { FileOutput } from '../types/fileOutput.js'
 
@@ -10,6 +11,17 @@ export class ReplicateService {
 
   constructor(auth: string) {
     this.replicate = new Replicate({ auth })
+  }
+
+  private async run(...args: Parameters<typeof this.replicate.run>): ReturnType<typeof this.replicate.run> {
+    try {
+      return await this.replicate.run(...args)
+    } catch (e) {
+      if (e instanceof Error) {
+        throw new ReplicateApiError(e.message)
+      }
+      throw e
+    }
   }
 
   async uploadHeicImage(url: string): Promise<string> {
@@ -36,7 +48,7 @@ export class ReplicateService {
       safety_tolerance: 2,
     }
 
-    const output = (await this.replicate.run(REPLICATE_MODELS.FLUX, {
+    const output = (await this.run(REPLICATE_MODELS.FLUX, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -62,7 +74,7 @@ export class ReplicateService {
       sequential_image_generation: 'disabled',
     }
 
-    const outputs = (await this.replicate.run(REPLICATE_MODELS.SEEDREAM, {
+    const outputs = (await this.run(REPLICATE_MODELS.SEEDREAM, {
       input,
     })) as ReadableStream[]
     const result: FileOutput[] = []
@@ -91,7 +103,7 @@ export class ReplicateService {
       safety_filter_level: 'block_only_high',
     }
 
-    const output = (await this.replicate.run(REPLICATE_MODELS.NANO_BANANA_PRO, {
+    const output = (await this.run(REPLICATE_MODELS.NANO_BANANA_PRO, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -114,7 +126,7 @@ export class ReplicateService {
       negative_prompt: '',
     }
 
-    const output = (await this.replicate.run(REPLICATE_MODELS.KLING, {
+    const output = (await this.run(REPLICATE_MODELS.KLING, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -138,7 +150,7 @@ export class ReplicateService {
       character_orientation: 'image',
     }
 
-    const output = (await this.replicate.run(REPLICATE_MODELS.KLING_MC, {
+    const output = (await this.run(REPLICATE_MODELS.KLING_MC, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))

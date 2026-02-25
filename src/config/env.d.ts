@@ -5,5 +5,7 @@ declare namespace NodeJS {
     YANDEX_TRANSLATE_FOLDER_ID?: string
     YANDEX_TRANSLATE_API_KEY?: string
     ALLOWED_CHAT_IDS?: string
+    REDIS_URL?: string
+    REDIS_KEY_PREFIX?: string
   }
 }

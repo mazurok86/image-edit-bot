@@ -4,7 +4,7 @@ import { ChatStore } from '../state/chatStore.js'
 import { BOT_MODELS } from '../models/index.js'
 import { isAllowedImage, isAllowedVideo } from '../helpers/fileHelpers.js'
 import { BOT_TEXTS } from '../constants/botTexts.js'
-import { escapeMarkdownV2 } from '../helpers/stringHelpers.js'
+import { escapeMarkdownV2, mapReplicateError } from '../helpers/stringHelpers.js'
 import type { ReplicateService } from './replicateService.js'
 import type { BotModel } from '../models/index.js'
 import type { FileOutput } from '../types/fileOutput.js'
@@ -12,6 +12,7 @@ import type { YandexTranslateService } from './yandexTranslateService.js'
 import { getChatImages, getChatVideos } from '../helpers/chatHelpers.js'
 import type { ChatState } from '../types/chatState.js'
 import type { Files } from '../types/files.js'
+import { ReplicateApiError } from '../errors/ReplicateApiError.js'
 
 export class BotService {
   private bot: TelegramBot
@@ -215,10 +216,14 @@ export class BotService {
           },
         )
       }
-    } catch (e) {
+    } catch (e: unknown) {
       console.log(`[${chatId}] Generation failed.`)
       console.log(e)
-      await this.sendMessage(chatId, BOT_TEXTS.ERROR)
+      if (e instanceof ReplicateApiError) {
+        await this.sendMessage(chatId, mapReplicateError(e.message))
+      } else {
+        await this.sendMessage(chatId, BOT_TEXTS.ERROR)
+      }
     } finally {
       console.log(`[${chatId}] Generation finished.`)
       clearInterval(handle)
