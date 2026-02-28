@@ -172,7 +172,7 @@ export class ReplicateService {
       video,
       mode: 'pro',
       keep_original_sound: true,
-      character_orientation: 'image',
+      character_orientation: 'video',
     }
 
     const output = (await this.run(REPLICATE_MODELS.KLING_MC, {
