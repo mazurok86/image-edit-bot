@@ -15,6 +15,7 @@ export function mapReplicateError(msg: string): string {
   if (lower.includes('high demand')) return BOT_TEXTS.ERROR_HIGH_DEMAND
   if (lower.includes('temporarily unavailable')) return BOT_TEXTS.ERROR_UNAVAILABLE
   if (lower.includes('video duration must not exceed 10 seconds')) return BOT_TEXTS.ERROR_VIDEO_EXCEED_10_SECONDS
+  if (lower.includes('video duration must not exceed 30 seconds')) return BOT_TEXTS.ERROR_VIDEO_EXCEED_30_SECONDS
   if (lower.includes('interrupted')) return BOT_TEXTS.ERROR_INTERRUPTED
   return BOT_TEXTS.ERROR
 }
