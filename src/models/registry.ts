@@ -1,0 +1,151 @@
+import { recordToEntries } from '../helpers/arrayHelpers.js'
+import type { Capabilities } from '../types/capabilities.js'
+import type {
+  ModelCapabilities,
+  ModelCapability,
+  ModelCapabilityValue,
+  ModelCapabilitiesValue,
+  ModelCapabilityKey,
+} from '../types/model.js'
+
+type Model = {
+  id: string
+  name: string
+  capabilities: Capabilities
+}
+
+const models = {
+  flux1: {
+    id: 'black-forest-labs/flux-kontext-pro',
+    name: '🔷 FLUX.1 Kontext',
+    capabilities: {
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'match_input_image',
+        valueLabels: { match_input_image: 'Оригинальное', '1:1': '1:1', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '9:16': '9:16' },
+      },
+    },
+  },
+  flux2: {
+    id: 'black-forest-labs/flux-2-pro',
+    name: '♦️ FLUX.2',
+    capabilities: {
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'match_input_image',
+        valueLabels: { match_input_image: 'Оригинальное', '1:1': '1:1', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '9:16': '9:16' },
+      },
+    },
+  },
+  seedream: {
+    id: 'bytedance/seedream-4',
+    name: '🧿 Seedream v4',
+    capabilities: {
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'match_input_image',
+        valueLabels: { match_input_image: 'Оригинальное', '1:1': '1:1', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '9:16': '9:16' },
+      },
+      size: {
+        id: 'size',
+        label: 'Размер',
+        value: '2K',
+        valueLabels: { '2K': '2K', '4K': '4K' },
+      },
+    },
+  },
+  nanoBanana: {
+    id: 'google/nano-banana-pro',
+    name: '🍌 Nano Banana PRO',
+    capabilities: {
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'match_input_image',
+        valueLabels: { match_input_image: 'Оригинальное', '1:1': '1:1', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '9:16': '9:16' },
+      },
+    },
+  },
+  kling: {
+    id: 'kwaivgi/kling-v2.1',
+    name: '📼 Kling v2.1 (5s 720p video)',
+    capabilities: {
+      mode: {
+        id: 'mode',
+        label: 'Режим',
+        value: 'standard',
+        valueLabels: { standard: 'Стандартный', pro: 'Про' },
+      },
+    },
+  },
+  klingMC: {
+    id: 'kwaivgi/kling-v2.6-motion-control',
+    name: '📼 Kling v2.6 (motion control)',
+    capabilities: {
+      characterOrientation: {
+        id: 'characterOrientation',
+        label: 'Ориентация персонажа',
+        value: 'video',
+        valueLabels: { image: 'По изображению', video: 'По видео' },
+      },
+    },
+  },
+} as const satisfies Record<string, Model>
+
+export type Models = typeof models
+export type ModelKey = keyof Models
+
+const modelKeyByName: Record<string, ModelKey> = Object.fromEntries(
+  recordToEntries(models).map(([modelKey, model]) => [model.name, modelKey]),
+)
+
+export function getModel<M extends ModelKey>(key: M): Models[M] {
+  return models[key]
+}
+
+export function getModelCapabilities<M extends ModelKey>(key: M): ModelCapabilities<M> {
+  return models[key].capabilities as ModelCapabilities<M>
+}
+
+export function getModelCapabilitiesValue<M extends ModelKey>(modelKey: M): ModelCapabilitiesValue<M> {
+  return Object.fromEntries(
+    recordToEntries(getModelCapabilities(modelKey)).map(([key, cap]) => [key, cap.value]),
+  ) as ModelCapabilitiesValue<M>
+}
+
+export function getModelCapability<M extends ModelKey, C extends ModelCapabilityKey<M>>(key: M, capKey: C): ModelCapability<M, C> {
+  const caps = getModelCapabilities(key)
+  return caps[capKey]
+}
+
+export function getModelCapabilityValue<M extends ModelKey, C extends ModelCapabilityKey<M>>(
+  key: M,
+  capKey: C,
+): ModelCapabilityValue<M, C> {
+  return getModelCapability(key, capKey).value
+}
+
+export function isModelCapabilityKey<M extends ModelKey>(key: string, modelKey: M): key is ModelCapabilityKey<M> {
+  return key in models[modelKey].capabilities
+}
+
+export function isModelCapabilityValue<M extends ModelKey, C extends ModelCapabilityKey<M>>(
+  key: string,
+  modelKey: M,
+  capKey: C,
+): key is ModelCapabilityValue<M, C> {
+  const caps = getModelCapabilities(modelKey)
+  const cap = caps[capKey]
+  return key in cap.valueLabels
+}
+
+export function getModelNames(): Models[keyof Models]['name'][] {
+  return Object.values(models).map(({ name }) => name)
+}
+
+export function getModelKeyByName(name: string): ModelKey | undefined {
+  return modelKeyByName[name]
+}

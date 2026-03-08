@@ -13,6 +13,8 @@ export function mapReplicateError(msg: string): string {
   if (lower.includes('flagged as sensitive')) return BOT_TEXTS.ERROR_FLAGGED_SENSITIVE
   if (lower.includes('sexual')) return BOT_TEXTS.ERROR_SEXUAL_CONTENT
   if (lower.includes('high demand')) return BOT_TEXTS.ERROR_HIGH_DEMAND
+  if (lower.includes('queue is full')) return BOT_TEXTS.ERROR_HIGH_DEMAND
+  if (lower.includes('no complete upper body')) return BOT_TEXTS.ERROR_NO_BODY
   if (lower.includes('temporarily unavailable')) return BOT_TEXTS.ERROR_UNAVAILABLE
   if (lower.includes('video duration must not exceed 10 seconds')) return BOT_TEXTS.ERROR_VIDEO_EXCEED_10_SECONDS
   if (lower.includes('video duration must not exceed 30 seconds')) return BOT_TEXTS.ERROR_VIDEO_EXCEED_30_SECONDS

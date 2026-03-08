@@ -1,10 +1,10 @@
 import dotenv from 'dotenv'
 import TelegramBot from 'node-telegram-bot-api'
-import { ChatStore } from './state/chatStore.js'
 import { ReplicateService } from './services/replicateService.js'
 import { BotService } from './services/botService.js'
 import { YandexTranslateService } from './services/yandexTranslateService.js'
 import { RedisService } from './services/redisService.js'
+import { ChatRegistry } from './state/chatRegistry.js'
 
 dotenv.config()
 
@@ -23,7 +23,7 @@ if (allowedChatIds.length === 0) {
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true })
-const store = new ChatStore()
+const store = new ChatRegistry()
 const yandexTranslateService = new YandexTranslateService(process.env.YANDEX_TRANSLATE_FOLDER_ID, process.env.YANDEX_TRANSLATE_API_KEY)
 const replicateService = new ReplicateService(process.env.REPLICATE_AUTH)
 const redisService = new RedisService(process.env.REDIS_URL, process.env.REDIS_KEY_PREFIX)

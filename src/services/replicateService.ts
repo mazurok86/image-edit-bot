@@ -1,10 +1,10 @@
 import Replicate from 'replicate'
 import convert from 'heic-convert'
 import { buffer } from 'node:stream/consumers'
-import { REPLICATE_MODELS } from '../models/index.js'
 import { ReplicateApiError } from '../errors/ReplicateApiError.js'
-import type { AspectRatio } from '../types/aspectRatio.js'
 import type { FileOutput } from '../types/fileOutput.js'
+import { getModel } from '../models/registry.js'
+import type { ModelCapabilitiesValue } from '../types/model.js'
 
 export class ReplicateService {
   private replicate: Replicate
@@ -39,18 +39,19 @@ export class ReplicateService {
     return file.urls.get
   }
 
-  async runFlux2(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runFlux2(prompt: string, images: string[], options: ModelCapabilitiesValue<'flux2'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       input_images: images,
-      aspect_ratio,
+      aspect_ratio: options.aspectRatio,
       output_format: 'jpg',
       output_quality: 90,
       resolution: '2 MP',
       safety_tolerance: 5,
     }
+    const id = getModel('flux2').id
 
-    const output = (await this.run(REPLICATE_MODELS.FLUX2, {
+    const output = (await this.run(id, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -64,16 +65,17 @@ export class ReplicateService {
     ]
   }
 
-  async runFlux(prompt: string, image: string | undefined, aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runFlux(prompt: string, image: string | undefined, options: ModelCapabilitiesValue<'flux1'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       input_image: image,
-      aspect_ratio,
+      aspect_ratio: options.aspectRatio,
       output_format: 'jpg',
       safety_tolerance: 2,
     }
+    const id = getModel('flux1').id
 
-    const output = (await this.run(REPLICATE_MODELS.FLUX, {
+    const output = (await this.run(id, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -87,19 +89,20 @@ export class ReplicateService {
     ]
   }
 
-  async runSeedream4(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runSeedream4(prompt: string, images: string[], options: ModelCapabilitiesValue<'seedream'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       image_input: images,
       size: '4K',
       width: 2048,
       height: 2048,
-      aspect_ratio,
+      aspect_ratio: options.aspectRatio,
       enhance_prompt: true,
       sequential_image_generation: 'disabled',
     }
+    const id = getModel('seedream').id
 
-    const outputs = (await this.run(REPLICATE_MODELS.SEEDREAM, {
+    const outputs = (await this.run(id, {
       input,
     })) as ReadableStream[]
     const result: FileOutput[] = []
@@ -118,17 +121,18 @@ export class ReplicateService {
     return result
   }
 
-  async runNanoBananaPro(prompt: string, images: string[], aspect_ratio: AspectRatio): Promise<FileOutput[]> {
+  async runNanoBananaPro(prompt: string, images: string[], options: ModelCapabilitiesValue<'nanoBanana'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       resolution: '2K',
       image_input: images,
-      aspect_ratio,
+      aspect_ratio: options.aspectRatio,
       output_format: 'jpg',
       safety_filter_level: 'block_only_high',
     }
+    const id = getModel('nanoBanana').id
 
-    const output = (await this.run(REPLICATE_MODELS.NANO_BANANA_PRO, {
+    const output = (await this.run(id, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -142,16 +146,17 @@ export class ReplicateService {
     ]
   }
 
-  async runKling(prompt: string, image: string | undefined): Promise<FileOutput[]> {
+  async runKling(prompt: string, image: string | undefined, options: ModelCapabilitiesValue<'kling'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       start_image: image,
-      mode: 'standard',
+      mode: options.mode,
       duration: 5,
       negative_prompt: '',
     }
+    const id = getModel('kling').id
 
-    const output = (await this.run(REPLICATE_MODELS.KLING, {
+    const output = (await this.run(id, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
@@ -165,17 +170,23 @@ export class ReplicateService {
     ]
   }
 
-  async runKlingMotionControl(prompt: string, image: string | undefined, video: string | undefined): Promise<FileOutput[]> {
+  async runKlingMotionControl(
+    prompt: string,
+    image: string | undefined,
+    video: string | undefined,
+    options: ModelCapabilitiesValue<'klingMC'>,
+  ): Promise<FileOutput[]> {
     const input = {
       prompt,
       image,
       video,
       mode: 'pro',
       keep_original_sound: true,
-      character_orientation: 'video',
+      character_orientation: options.characterOrientation,
     }
+    const id = getModel('klingMC').id
 
-    const output = (await this.run(REPLICATE_MODELS.KLING_MC, {
+    const output = (await this.run(id, {
       input,
     })) as ReadableStream
     const buf = Buffer.from(await buffer(output))
