@@ -11,6 +11,7 @@ import { ModelSelectionHandler } from './handlers/modelSelectionHandler.js'
 import { ModelSettingsHandler } from './handlers/modelSettingsHandler.js'
 import type { FileOutput } from '../types/fileOutput.js'
 import type { ChatRegistry } from '../state/chatRegistry.js'
+import type { ChatStore } from '../state/chatStore.js'
 
 export class BotService implements BotContext {
   readonly bot: TelegramBot
@@ -83,10 +84,9 @@ export class BotService implements BotContext {
     })
   }
 
-  schedulePrompt(chatId: number, delay: number = 0): void {
-    const chat = this.store.get(chatId)
+  schedulePrompt(chat: ChatStore, delay: number = 0): void {
     chat.scheduleResponse(() => {
-      this.generationHandler.handlePrompt(chatId).catch(() => {})
+      this.generationHandler.handlePrompt(chat).catch(() => {})
     }, delay)
   }
 
@@ -100,7 +100,7 @@ export class BotService implements BotContext {
       return
     }
 
-    const chat = this.store.get(chatId)
+    const chat = await this.store.get(chatId)
 
     const { text, caption, document, photo, video } = msg
 
@@ -110,29 +110,32 @@ export class BotService implements BotContext {
       return
     }
 
-    if (chat.modelKey === undefined) {
-      await this.modelSelectionHandler.handleModelSelection(chatId, messageId, text)
+    if (chat.modelKey === undefined || text === BOT_TEXTS.BACK) {
+      await this.modelSettingsHandler.handleModelSettingsCleanup(chat)
+      await this.modelSelectionHandler.handleModelSelection(chat, messageId, text)
       return
     }
 
     if (text === BOT_TEXTS.MODEL_SETTINGS) {
-      await this.modelSettingsHandler.handleModelSettings(chatId, messageId)
+      await this.modelSettingsHandler.handleModelSettings(chat, messageId)
+      return
+    }
+
+    if (text === BOT_TEXTS.CLEAR) {
+      await this.generationHandler.handleClear(chat, messageId)
       return
     }
 
     if (document) {
-      await this.fileHandler.handleDocument(chatId, document)
-      return
+      await this.fileHandler.handleDocument(chat, document)
     }
 
     if (photo) {
-      await this.fileHandler.handlePhoto(chatId, photo)
-      return
+      await this.fileHandler.handlePhoto(chat, photo)
     }
 
     if (video) {
-      await this.fileHandler.handleVideo(chatId, video)
-      return
+      await this.fileHandler.handleVideo(chat, video)
     }
 
     if (chat.images.length === 0 && chat.videos.length === 0) {
@@ -142,13 +145,11 @@ export class BotService implements BotContext {
 
     const prompt = text === undefined ? (caption === undefined ? '' : caption.trim()) : text.trim()
     if (prompt !== '') {
-      console.log(`[${chatId}] Prompt set.`)
-      chat.prompt = prompt
-      await this.generationHandler.generate(chatId)
-      return
+      console.log(`[${chat.id}] Prompt specified.`)
+      await this.generationHandler.generate(chat, prompt)
     }
 
-    this.schedulePrompt(chatId)
+    this.schedulePrompt(chat, 500)
   }
 
   private async handleCallbackQuery(query: CallbackQuery): Promise<void> {
@@ -165,11 +166,9 @@ export class BotService implements BotContext {
       return
     }
 
-    const chat = this.store.get(chatId)
+    const chat = await this.store.get(chatId)
 
-    if (chat.modelKey !== undefined) {
-      await this.modelSettingsHandler.handleModelSettingsCallback(chatId, messageId, chat.modelKey, data)
-    }
+    await this.modelSettingsHandler.handleModelSettingsCallback(chat, messageId, data)
 
     await this.bot.answerCallbackQuery(query.id)
   }

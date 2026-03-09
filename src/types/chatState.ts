@@ -4,16 +4,18 @@ import type { ModelCapabilitiesValue } from './model.js'
 
 export type ChatStateModel<M extends ModelKey> = Partial<ModelCapabilitiesValue<M>>
 
-type ChatStateModels = {
+export type ChatStateModels = {
   [K in ModelKey]?: ChatStateModel<K>
 }
 
+export type ChatStateSettingsMessagesIds = {
+  [K in ModelKey]?: number
+}
+
 export interface ChatState {
-  prompt: string
   files: ChatFile[]
-  timeout: NodeJS.Timeout | undefined
-  responseTimeout: NodeJS.Timeout | undefined
-  busy: boolean
+  filesExpireAt: number | undefined
   modelKey: ModelKey | undefined
   models: ChatStateModels
+  settingsMessagesIds: ChatStateSettingsMessagesIds
 }

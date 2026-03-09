@@ -11,6 +11,10 @@ import type {
 type Model = {
   id: string
   name: string
+  minPhoto: number,
+  maxPhoto: number,
+  minVideo: number,
+  maxVideo: number,
   capabilities: Capabilities
 }
 
@@ -18,6 +22,10 @@ const models = {
   flux1: {
     id: 'black-forest-labs/flux-kontext-pro',
     name: '🔷 FLUX.1 Kontext',
+    minPhoto: 1,
+    maxPhoto: 4,
+    minVideo: 0,
+    maxVideo: 0,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -30,6 +38,10 @@ const models = {
   flux2: {
     id: 'black-forest-labs/flux-2-pro',
     name: '♦️ FLUX.2',
+    minPhoto: 1,
+    maxPhoto: 4,
+    minVideo: 0,
+    maxVideo: 0,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -42,6 +54,10 @@ const models = {
   seedream: {
     id: 'bytedance/seedream-4',
     name: '🧿 Seedream v4',
+    minPhoto: 1,
+    maxPhoto: 4,
+    minVideo: 0,
+    maxVideo: 0,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -60,6 +76,10 @@ const models = {
   nanoBanana: {
     id: 'google/nano-banana-pro',
     name: '🍌 Nano Banana PRO',
+    minPhoto: 1,
+    maxPhoto: 4,
+    minVideo: 0,
+    maxVideo: 0,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -72,6 +92,10 @@ const models = {
   kling: {
     id: 'kwaivgi/kling-v2.1',
     name: '📼 Kling v2.1 (5s 720p video)',
+    minPhoto: 1,
+    maxPhoto: 1,
+    minVideo: 0,
+    maxVideo: 0,
     capabilities: {
       mode: {
         id: 'mode',
@@ -84,6 +108,10 @@ const models = {
   klingMC: {
     id: 'kwaivgi/kling-v2.6-motion-control',
     name: '📼 Kling v2.6 (motion control)',
+    minPhoto: 1,
+    maxPhoto: 1,
+    minVideo: 1,
+    maxVideo: 1,
     capabilities: {
       characterOrientation: {
         id: 'characterOrientation',
@@ -128,18 +156,22 @@ export function getModelCapabilityValue<M extends ModelKey, C extends ModelCapab
   return getModelCapability(key, capKey).value
 }
 
-export function isModelCapabilityKey<M extends ModelKey>(key: string, modelKey: M): key is ModelCapabilityKey<M> {
-  return key in models[modelKey].capabilities
+export function isModelKey(key: unknown): key is ModelKey {
+  return typeof key === 'string' && key in models
+}
+
+export function isModelCapabilityKey<M extends ModelKey>(key: unknown, modelKey: M): key is ModelCapabilityKey<M> {
+  return typeof key === 'string' && key in models[modelKey].capabilities
 }
 
 export function isModelCapabilityValue<M extends ModelKey, C extends ModelCapabilityKey<M>>(
-  key: string,
+  key: unknown,
   modelKey: M,
   capKey: C,
 ): key is ModelCapabilityValue<M, C> {
   const caps = getModelCapabilities(modelKey)
   const cap = caps[capKey]
-  return key in cap.valueLabels
+  return typeof key === 'string' && key in cap.valueLabels
 }
 
 export function getModelNames(): Models[keyof Models]['name'][] {

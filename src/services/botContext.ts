@@ -11,5 +11,4 @@ export interface BotContext {
   readonly yandexTranslateService: YandexTranslateService
   readonly runners: ModelRunners
   sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message>
-  schedulePrompt(chatId: number, delay?: number): void
 }

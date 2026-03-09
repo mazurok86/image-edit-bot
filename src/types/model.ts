@@ -3,9 +3,6 @@ import type { FileOutput } from './fileOutput.js'
 import type { Files } from './files.js'
 
 type ModelRawCapabilities<M extends ModelKey> = Models[M]['capabilities']
-// type KeyOf<T> = T extends Record<string, unknown> ? keyof T : never;
-// type ValueOf<T> = T extends Record<string, unknown> ? T[keyof T] : never;
-// type UnionByKey<T, K> = T extends Record<string, unknown> ? K extends keyof T ? T[K]: never: never;
 
 export type ModelCapabilityKey<M extends ModelKey> = keyof ModelRawCapabilities<M> & string
 
@@ -19,7 +16,6 @@ export type ModelCapabilitiesValue<M extends ModelKey> = {
 
 export type ModelCapabilityValue<M extends ModelKey, K extends ModelCapabilityKey<M>> = ModelCapabilitiesValue<M>[K]
 
-// export type ModelCapability<M extends ModelKey, K extends ModelCapabilityKey<M>> = UnionByKey<Models[M]['capabilities'], K>;
 export type ModelCapability<M extends ModelKey, K extends ModelCapabilityKey<M>> = {
   value: ModelCapabilityValue<M, K>
   label: ModelRawCapabilities<M>[K] extends { label: infer V } ? V : never

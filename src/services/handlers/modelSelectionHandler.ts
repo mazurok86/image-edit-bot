@@ -4,39 +4,43 @@ import { getModel, getModelKeyByName, getModelNames } from '../../models/registr
 import { Handler } from './handler.js'
 import { chunkArray } from '../../helpers/arrayHelpers.js'
 import { escapeMarkdownV2 } from '../../helpers/stringHelpers.js'
+import type { ChatStore } from '../../state/chatStore.js'
 
 export class ModelSelectionHandler extends Handler {
-  async handleModelSelection(chatId: number, messageId: number, text: string | undefined): Promise<void> {
-    const chat = this.getChat(chatId)
+  async handleModelSelection(chat: ChatStore, messageId: number, text?: string): Promise<void> {
+    const isBack = text === BOT_TEXTS.BACK
 
-    chat.modelKey = text === undefined ? undefined : getModelKeyByName(text)
+    chat.modelKey = text === undefined || isBack ? undefined : getModelKeyByName(text)
 
-    if (chat.modelKey === undefined) {
+    const modelKey = chat.modelKey
+
+    if (modelKey !== undefined || isBack) {
+      try {
+        await this.ctx.bot.deleteMessage(chat.id, messageId)
+      } catch {
+        // ignore
+      }
+    }
+
+    if (modelKey === undefined) {
       const items: KeyboardButton[] = []
       for (const name of getModelNames()) {
         items.push({ text: name })
       }
       const keyboard: KeyboardButton[][] = chunkArray(items, 2)
-      await this.ctx.sendMessage(chatId, BOT_TEXTS.SELECT_MODEL, {
+      await this.ctx.sendMessage(chat.id, BOT_TEXTS.SELECT_MODEL, {
         reply_markup: {
           keyboard,
           resize_keyboard: true,
-          one_time_keyboard: true,
         },
       })
     } else {
-      const model = getModel(chat.modelKey)
-      const keyboard: KeyboardButton[][] = [[{ text: BOT_TEXTS.MODEL_SETTINGS }]]
-      try {
-        await this.ctx.bot.deleteMessage(chatId, messageId)
-      } catch {
-        // ignore
-      }
-      await this.ctx.sendMessage(chatId, escapeMarkdownV2(model.name), {
+      const model = getModel(modelKey)
+      const keyboard: KeyboardButton[][] = [[{ text: BOT_TEXTS.MODEL_SETTINGS }], [{ text: BOT_TEXTS.BACK }]]
+      await this.ctx.sendMessage(chat.id, escapeMarkdownV2(model.name), {
         reply_markup: {
           keyboard,
           resize_keyboard: true,
-          one_time_keyboard: true,
         },
       })
     }
