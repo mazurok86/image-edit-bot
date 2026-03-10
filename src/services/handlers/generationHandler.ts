@@ -107,17 +107,11 @@ export class GenerationHandler extends Handler {
     const videosLength = chat.videos.length
     const hasImages = imagesLength > 0
     const hasVideo = videosLength > 0
-    const keyboard: KeyboardButton[][] = []
-
-    if (this.ctx.isReady(chat)) {
-      keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
-    }
 
     let text = ''
     if (!hasImages && !hasVideo) {
       text = BOT_TEXTS.FILES_REQUIRED
     } else {
-      keyboard.push([{ text: BOT_TEXTS.CLEAR }])
       if (hasImages) {
         text += `${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}\n`
       }
@@ -131,6 +125,14 @@ export class GenerationHandler extends Handler {
       }
     }
 
+    const keyboard: KeyboardButton[][] = []
+
+    if (this.ctx.isReady(chat)) {
+      keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
+    }
+    if (this.ctx.hasInputs(chat)) {
+      keyboard.push([{ text: BOT_TEXTS.CLEAR }])
+    }
     keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])
     keyboard.push([{ text: BOT_TEXTS.BACK }])
 

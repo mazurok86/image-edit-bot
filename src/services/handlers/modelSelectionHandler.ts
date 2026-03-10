@@ -41,6 +41,9 @@ export class ModelSelectionHandler extends Handler {
       if (this.ctx.isReady(chat)) {
         keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
       }
+      if (this.ctx.hasInputs(chat)) {
+        keyboard.push([{ text: BOT_TEXTS.CLEAR }])
+      }
       keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])
       keyboard.push([{ text: BOT_TEXTS.BACK }])
 

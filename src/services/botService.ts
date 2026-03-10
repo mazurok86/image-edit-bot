@@ -90,7 +90,9 @@ export class BotService implements BotContext {
 
   schedulePrompt(chat: ChatStore, delay: number = 0): void {
     chat.scheduleResponse(() => {
-      this.generationHandler.handlePrompt(chat).catch(() => {})
+      this.generationHandler.handlePrompt(chat).catch((err) => {
+        console.error(err)
+      })
     }, delay)
   }
 
@@ -107,6 +109,14 @@ export class BotService implements BotContext {
     }
 
     if (model.requirePrompt && chat.prompt === '') {
+      return false
+    }
+
+    return true
+  }
+
+  hasInputs(chat: ChatStore): boolean {
+    if (chat.images.length === 0 && chat.videos.length === 0 && chat.prompt === '') {
       return false
     }
 

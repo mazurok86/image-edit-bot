@@ -13,4 +13,5 @@ export interface BotContext {
   readonly runners: ModelRunners
   sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message>
   isReady(chat: ChatStore): boolean
+  hasInputs(chat: ChatStore): boolean
 }
