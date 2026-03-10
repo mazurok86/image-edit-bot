@@ -41,6 +41,9 @@ export class BotService implements BotContext {
     this.replicateService = replicateService
 
     this.runners = {
+      qwen: async (prompt, files, settings): Promise<FileOutput[]> => {
+        return await this.replicateService.runQwen(prompt, files.images, settings)
+      },
       flux2: async (prompt, files, settings): Promise<FileOutput[]> => {
         return await this.replicateService.runFlux2(prompt, files.images, settings)
       },

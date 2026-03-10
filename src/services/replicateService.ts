@@ -39,6 +39,37 @@ export class ReplicateService {
     return file.urls.get
   }
 
+  async runQwen(prompt: string, image: string[], options: ModelCapabilitiesValue<'qwen'>): Promise<FileOutput[]> {
+    const input = {
+      prompt,
+      image,
+      aspect_ratio: options.aspectRatio,
+      output_format: 'jpg',
+      go_fast: false,
+      output_quality: 95,
+      disable_safety_checker: true,
+    }
+    const id = getModel('qwen').id
+
+    const outputs = (await this.run(id, {
+      input,
+    })) as ReadableStream[]
+    const result: FileOutput[] = []
+
+    let i = 0
+    for (const output of outputs) {
+      i++
+      const buf = Buffer.from(await buffer(output))
+      result.push({
+        buffer: buf,
+        filename: `qwen_${Date.now()}_${i}.jpg`,
+        contentType: 'image/jpeg',
+      })
+    }
+
+    return result
+  }
+
   async runFlux2(prompt: string, images: string[], options: ModelCapabilitiesValue<'flux2'>): Promise<FileOutput[]> {
     const input = {
       prompt,

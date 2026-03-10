@@ -20,6 +20,23 @@ type Model = {
 }
 
 const models = {
+  qwen: {
+    id: 'qwen/qwen-image-edit-plus',
+    name: '⭕ Qwen',
+    minImages: 1,
+    maxImages: 4,
+    minVideo: 0,
+    maxVideo: 0,
+    requirePrompt: true,
+    capabilities: {
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'match_input_image',
+        valueLabels: { match_input_image: 'Оригинальное', '1:1': '1:1', '4:3': '4:3', '3:4': '3:4', '16:9': '16:9', '9:16': '9:16' },
+      },
+    },
+  },
   flux1: {
     id: 'black-forest-labs/flux-kontext-pro',
     name: '🔷 FLUX.1 Kontext',
