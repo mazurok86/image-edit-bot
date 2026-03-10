@@ -17,6 +17,7 @@ export class ChatStore {
   private _busy: boolean = false
 
   private readonly state: ChatState = {
+    prompt: '',
     files: [],
     filesExpireAt: undefined,
     modelKey: undefined,
@@ -58,14 +59,25 @@ export class ChatStore {
       return
     }
 
-    const { files, modelKey, models, settingsMessagesIds } = parsed
+    const { prompt, files, filesExpireAt, modelKey, models, settingsMessagesIds } = parsed
 
+    if (typeof prompt === 'string') this.state.prompt = prompt
     if (Array.isArray(files)) this.state.files = files as ChatFile[]
+    if (filesExpireAt !== undefined) this.state.filesExpireAt = Number(filesExpireAt)
     if (isModelKey(modelKey)) this.state.modelKey = modelKey
     if (models !== undefined && typeof models === 'object') this.state.models = models as ChatStateModels
     if (settingsMessagesIds !== undefined && typeof settingsMessagesIds === 'object') {
       this.state.settingsMessagesIds = settingsMessagesIds as ChatStateSettingsMessagesIds
     }
+  }
+
+  get prompt(): string {
+    return this.state.prompt
+  }
+
+  set prompt(value: string) {
+    this.state.prompt = value
+    this.persist()
   }
 
   get modelKey(): ModelKey | undefined {
@@ -165,6 +177,7 @@ export class ChatStore {
   }
 
   clear(): void {
+    this.state.prompt = ''
     this.state.files = []
     this.state.filesExpireAt = undefined
     this.persist()

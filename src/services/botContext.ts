@@ -3,6 +3,7 @@ import type { ChatRegistry } from '../state/chatRegistry.js'
 import type { ReplicateService } from './replicateService.js'
 import type { YandexTranslateService } from './yandexTranslateService.js'
 import type { ModelRunners } from '../types/model.js'
+import type { ChatStore } from '../state/chatStore.js'
 
 export interface BotContext {
   readonly bot: TelegramBot
@@ -11,4 +12,5 @@ export interface BotContext {
   readonly yandexTranslateService: YandexTranslateService
   readonly runners: ModelRunners
   sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message>
+  isReady(chat: ChatStore): boolean
 }

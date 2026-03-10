@@ -13,6 +13,7 @@ export type ChatStateSettingsMessagesIds = {
 }
 
 export interface ChatState {
+  prompt: string
   files: ChatFile[]
   filesExpireAt: number | undefined
   modelKey: ModelKey | undefined

@@ -12,6 +12,7 @@ import { ModelSettingsHandler } from './handlers/modelSettingsHandler.js'
 import type { FileOutput } from '../types/fileOutput.js'
 import type { ChatRegistry } from '../state/chatRegistry.js'
 import type { ChatStore } from '../state/chatStore.js'
+import { getModel } from '../models/registry.js'
 
 export class BotService implements BotContext {
   readonly bot: TelegramBot
@@ -90,6 +91,25 @@ export class BotService implements BotContext {
     }, delay)
   }
 
+  isReady(chat: ChatStore): boolean {
+    const modelKey = chat.modelKey
+    if (modelKey === undefined) {
+      return false
+    }
+
+    const model = getModel(modelKey)
+
+    if (chat.images.length < model.minImages || chat.videos.length < model.minVideo) {
+      return false
+    }
+
+    if (model.requirePrompt && chat.prompt === '') {
+      return false
+    }
+
+    return true
+  }
+
   private async handleMessage(msg: Message): Promise<void> {
     const chatId = msg.chat.id
     const messageId = msg.message_id
@@ -126,6 +146,12 @@ export class BotService implements BotContext {
       return
     }
 
+    if (text === BOT_TEXTS.START_GENERATION) {
+      await this.generationHandler.generate(chat, messageId)
+      this.schedulePrompt(chat, 500)
+      return
+    }
+
     if (document) {
       await this.fileHandler.handleDocument(chat, document)
     }
@@ -138,15 +164,10 @@ export class BotService implements BotContext {
       await this.fileHandler.handleVideo(chat, video)
     }
 
-    if (chat.images.length === 0 && chat.videos.length === 0) {
-      await this.sendMessage(chatId, BOT_TEXTS.NO_FILES)
-      return
-    }
-
     const prompt = text === undefined ? (caption === undefined ? '' : caption.trim()) : text.trim()
     if (prompt !== '') {
       console.log(`[${chat.id}] Prompt specified.`)
-      await this.generationHandler.generate(chat, prompt)
+      chat.prompt = prompt
     }
 
     this.schedulePrompt(chat, 500)

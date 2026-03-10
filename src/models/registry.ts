@@ -11,10 +11,11 @@ import type {
 type Model = {
   id: string
   name: string
-  minPhoto: number,
-  maxPhoto: number,
-  minVideo: number,
-  maxVideo: number,
+  minImages: number
+  maxImages: number
+  minVideo: number
+  maxVideo: number
+  requirePrompt: boolean
   capabilities: Capabilities
 }
 
@@ -22,10 +23,11 @@ const models = {
   flux1: {
     id: 'black-forest-labs/flux-kontext-pro',
     name: '🔷 FLUX.1 Kontext',
-    minPhoto: 1,
-    maxPhoto: 4,
+    minImages: 1,
+    maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    requirePrompt: true,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -38,10 +40,11 @@ const models = {
   flux2: {
     id: 'black-forest-labs/flux-2-pro',
     name: '♦️ FLUX.2',
-    minPhoto: 1,
-    maxPhoto: 4,
+    minImages: 1,
+    maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    requirePrompt: true,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -54,10 +57,11 @@ const models = {
   seedream: {
     id: 'bytedance/seedream-4',
     name: '🧿 Seedream v4',
-    minPhoto: 1,
-    maxPhoto: 4,
+    minImages: 1,
+    maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    requirePrompt: true,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -76,10 +80,11 @@ const models = {
   nanoBanana: {
     id: 'google/nano-banana-pro',
     name: '🍌 Nano Banana PRO',
-    minPhoto: 1,
-    maxPhoto: 4,
+    minImages: 1,
+    maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    requirePrompt: true,
     capabilities: {
       aspectRatio: {
         id: 'aspectRatio',
@@ -92,10 +97,11 @@ const models = {
   kling: {
     id: 'kwaivgi/kling-v2.1',
     name: '📼 Kling v2.1 (5s 720p video)',
-    minPhoto: 1,
-    maxPhoto: 1,
+    minImages: 1,
+    maxImages: 1,
     minVideo: 0,
     maxVideo: 0,
+    requirePrompt: true,
     capabilities: {
       mode: {
         id: 'mode',
@@ -108,10 +114,11 @@ const models = {
   klingMC: {
     id: 'kwaivgi/kling-v2.6-motion-control',
     name: '📼 Kling v2.6 (motion control)',
-    minPhoto: 1,
-    maxPhoto: 1,
+    minImages: 1,
+    maxImages: 1,
     minVideo: 1,
     maxVideo: 1,
+    requirePrompt: false,
     capabilities: {
       characterOrientation: {
         id: 'characterOrientation',

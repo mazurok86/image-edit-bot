@@ -26,6 +26,8 @@ export const BOT_TEXTS = {
   MODEL_SETTINGS: '⚙️ Настройки модели',
   UPLOAD_IMAGE: '🖼️ *Загрузите изображение* или введите текст запроса',
   UPLOAD_MORE: '➕ *Загрузите еще* или введите текст запроса',
+  ENTER_PROMPT: '➕ *Введите текст запроса',
   UPLOADED_IMAGES: '🖼️ *Загружено изображений:* ',
   UPLOADED_VIDEOS: '🎬 *Загружено видео:* ',
+  START_GENERATION: '✨ Создать',
 } as const

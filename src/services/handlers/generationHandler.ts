@@ -11,7 +11,13 @@ import { Handler } from './handler.js'
 import type { ChatStore } from '../../state/chatStore.js'
 
 export class GenerationHandler extends Handler {
-  async generate(chat: ChatStore, prompt: string): Promise<void> {
+  async generate(chat: ChatStore, messageId: number): Promise<void> {
+    try {
+      await this.ctx.bot.deleteMessage(chat.id, messageId)
+    } catch {
+      // ignore
+    }
+
     const modelKey = chat.modelKey
     if (modelKey === undefined) {
       return
@@ -38,7 +44,7 @@ export class GenerationHandler extends Handler {
       await this.ctx.sendMessage(chat.id, `${BOT_TEXTS.USING_MODEL}${escapeMarkdownV2(model.name)}`)
       chat.files = await this.uploadChatFiles(chat.files)
 
-      const translatedPrompt = await this.ctx.yandexTranslateService.translate(prompt)
+      const translatedPrompt = await this.ctx.yandexTranslateService.translate(chat.prompt)
 
       const files = await this.invokeRunner(chat, modelKey, translatedPrompt, {
         images: chat.images,
@@ -74,6 +80,10 @@ export class GenerationHandler extends Handler {
     }
 
     const keyboard: KeyboardButton[][] = []
+
+    if (this.ctx.isReady(chat)) {
+      keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
+    }
     keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])
     keyboard.push([{ text: BOT_TEXTS.BACK }])
 
@@ -91,11 +101,17 @@ export class GenerationHandler extends Handler {
       return
     }
 
+    const model = getModel(modelKey)
+
     const imagesLength = chat.images.length
     const videosLength = chat.videos.length
     const hasImages = imagesLength > 0
     const hasVideo = videosLength > 0
     const keyboard: KeyboardButton[][] = []
+
+    if (this.ctx.isReady(chat)) {
+      keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
+    }
 
     let text = ''
     if (!hasImages && !hasVideo) {
@@ -108,7 +124,11 @@ export class GenerationHandler extends Handler {
       if (hasVideo) {
         text += `${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}\n`
       }
-      text += `\n${BOT_TEXTS.UPLOAD_MORE}`
+      if (imagesLength >= model.maxImages && videosLength >= model.maxVideo) {
+        text += `\n${BOT_TEXTS.ENTER_PROMPT}`
+      } else {
+        text += `\n${BOT_TEXTS.UPLOAD_MORE}`
+      }
     }
 
     keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])

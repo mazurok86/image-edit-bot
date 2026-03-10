@@ -36,7 +36,14 @@ export class ModelSelectionHandler extends Handler {
       })
     } else {
       const model = getModel(modelKey)
-      const keyboard: KeyboardButton[][] = [[{ text: BOT_TEXTS.MODEL_SETTINGS }], [{ text: BOT_TEXTS.BACK }]]
+      const keyboard: KeyboardButton[][] = []
+
+      if (this.ctx.isReady(chat)) {
+        keyboard.push([{ text: BOT_TEXTS.START_GENERATION }])
+      }
+      keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])
+      keyboard.push([{ text: BOT_TEXTS.BACK }])
+
       await this.ctx.sendMessage(chat.id, escapeMarkdownV2(model.name), {
         reply_markup: {
           keyboard,
