@@ -21,6 +21,7 @@ Copy `.env.example` to `.env` and fill in all values. All five variables are req
 
 - `REPLICATE_AUTH` — Replicate API token
 - `TELEGRAM_BOT_TOKEN` — Telegram bot token
+- `TELEGRAM_BASE_API_URL` — Telegram base API URL
 - `YANDEX_TRANSLATE_FOLDER_ID` — Yandex Cloud folder ID for translation
 - `YANDEX_TRANSLATE_API_KEY` — Yandex Cloud API key
 - `ALLOWED_CHAT_IDS` — comma-separated list of permitted Telegram chat IDs

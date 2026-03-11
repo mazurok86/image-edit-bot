@@ -10,6 +10,7 @@ dotenv.config()
 
 if (process.env.REPLICATE_AUTH === undefined) throw new Error('REPLICATE_AUTH is missing')
 if (process.env.TELEGRAM_BOT_TOKEN === undefined) throw new Error('TELEGRAM_BOT_TOKEN is missing')
+if (process.env.TELEGRAM_BASE_API_URL === undefined) throw new Error('TELEGRAM_BASE_API_URL is missing')
 if (process.env.YANDEX_TRANSLATE_FOLDER_ID === undefined) throw new Error('YANDEX_TRANSLATE_FOLDER_ID is missing')
 if (process.env.YANDEX_TRANSLATE_API_KEY === undefined) throw new Error('YANDEX_TRANSLATE_API_KEY is missing')
 if (process.env.ALLOWED_CHAT_IDS === undefined) throw new Error('ALLOWED_CHAT_IDS is missing')
@@ -22,7 +23,7 @@ if (allowedChatIds.length === 0) {
   throw new Error('ALLOWED_CHAT_IDS is empty')
 }
 
-const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true })
+const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true, baseApiUrl: process.env.TELEGRAM_BASE_API_URL })
 const yandexTranslateService = new YandexTranslateService(process.env.YANDEX_TRANSLATE_FOLDER_ID, process.env.YANDEX_TRANSLATE_API_KEY)
 const replicateService = new ReplicateService(process.env.REPLICATE_AUTH)
 const redisService = new RedisService(process.env.REDIS_URL, process.env.REDIS_KEY_PREFIX)
