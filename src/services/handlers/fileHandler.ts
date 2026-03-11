@@ -1,10 +1,51 @@
+import path from 'path'
 import type { Document, PhotoSize, Video } from 'node-telegram-bot-api'
 import { isAllowedImage, isAllowedVideo } from '../../helpers/fileHelpers.js'
 import { BOT_TEXTS } from '../../constants/botTexts.js'
 import { Handler } from './handler.js'
 import type { ChatStore } from '../../state/chatStore.js'
+import type { FileLocation } from '../../types/fileLocation.js'
 
 export class FileHandler extends Handler {
+  private async getFileLocation(fileId: string): Promise<FileLocation> {
+    const file = await this.ctx.bot.getFile(fileId)
+
+    const filePath = file.file_path
+    if (filePath === undefined) {
+      throw new Error('file_path is missing in getFile response')
+    }
+
+    const baseApiUrl = process.env.TELEGRAM_BASE_API_URL
+    if (baseApiUrl === undefined) {
+      throw new Error('Telegram base API URL is missing')
+    }
+
+    const token = process.env.TELEGRAM_BOT_TOKEN
+    if (token === undefined) {
+      throw new Error('Telegram token is missing')
+    }
+
+    if (path.isAbsolute(filePath)) {
+      const tokenIndex = filePath.indexOf(token)
+      if (tokenIndex === -1) {
+        throw new Error('Cannot determine relative path for local file')
+      }
+
+      const localFileBaseUrl = process.env.TELEGRAM_LOCAL_FILE_BASE_URL
+      if (localFileBaseUrl === undefined) {
+        throw new Error('Telegram local file base URL is missing')
+      }
+
+      const relPath = filePath.slice(tokenIndex + token.length + 1)
+      const url = `${localFileBaseUrl}/file/bot${token}/${relPath.replace(/\\/g, '/')}`
+
+      return { type: 'local', path: filePath, url }
+    }
+
+    // cloud Telegram
+    return { type: 'url', url: `${baseApiUrl}/file/bot${token}/${filePath}` }
+  }
+
   async handleDocument(chat: ChatStore, doc: Document): Promise<void> {
     const { mime_type, file_id, file_size } = doc
     try {
@@ -14,8 +55,8 @@ export class FileHandler extends Handler {
       if (!isAllowedImage(mime_type) && !isAllowedVideo(mime_type, file_size)) {
         throw new Error()
       }
-      const link = await this.ctx.bot.getFileLink(file_id)
-      chat.addFile(link, mime_type)
+      const fileLocation = await this.getFileLocation(file_id)
+      chat.addFile(fileLocation.url, mime_type)
       console.log(`[${chat.id}] File added.`)
     } catch {
       console.log(`[${chat.id}] Invalid file.`)
@@ -32,8 +73,8 @@ export class FileHandler extends Handler {
       if (photo === undefined) {
         throw new Error()
       }
-      const fileLink = await this.ctx.bot.getFileLink(photo.file_id)
-      chat.addFile(fileLink, 'image/jpeg')
+      const fileLocation = await this.getFileLocation(photo.file_id)
+      chat.addFile(fileLocation.url, 'image/jpeg')
       console.log(`[${chat.id}] Image added.`)
     } catch {
       console.log(`[${chat.id}] Invalid image.`)
@@ -50,8 +91,8 @@ export class FileHandler extends Handler {
       if (!isAllowedVideo(mime_type, file_size)) {
         throw new Error()
       }
-      const fileLink = await this.ctx.bot.getFileLink(file_id)
-      chat.addFile(fileLink, mime_type)
+      const fileLocation = await this.getFileLocation(file_id)
+      chat.addFile(fileLocation.url, mime_type)
       console.log(`[${chat.id}] Video added.`)
     } catch {
       console.log(`[${chat.id}] Invalid video.`)
