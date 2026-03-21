@@ -67,6 +67,9 @@ export class BotService implements BotContext {
           settings,
         )
       },
+      wan22: async (prompt, files, settings): Promise<FileOutput[]> => {
+        return await this.replicateService.runWan22(prompt, files.images[files.images.length - 1], settings)
+      },
     }
 
     this.fileHandler = new FileHandler(this)

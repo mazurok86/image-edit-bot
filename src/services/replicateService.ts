@@ -230,4 +230,30 @@ export class ReplicateService {
       },
     ]
   }
+
+  async runWan22(prompt: string, image: string | undefined, options: ModelCapabilitiesValue<'wan22'>): Promise<FileOutput[]> {
+    const input = {
+      prompt,
+      image,
+      disable_safety_checker: true,
+      go_fast: false,
+      num_frames: Number(options.numFrames),
+      resolution: options.resolution,
+      frames_per_second: Number(options.framesPerSecond),
+    }
+    const id = getModel('wan22').id
+
+    const output = (await this.run(id, {
+      input,
+    })) as ReadableStream
+    const buf = Buffer.from(await buffer(output))
+
+    return [
+      {
+        buffer: buf,
+        filename: `wan22_${Date.now()}.mp4`,
+        contentType: 'video/mp4',
+      },
+    ]
+  }
 }

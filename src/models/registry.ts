@@ -145,6 +145,35 @@ const models = {
       },
     },
   },
+  wan22: {
+    id: 'wan-video/wan-2.2-i2v-fast',
+    name: '📼 Wan 2.2',
+    minImages: 1,
+    maxImages: 1,
+    minVideo: 0,
+    maxVideo: 0,
+    requirePrompt: true,
+    capabilities: {
+      numFrames: {
+        id: 'numFrames',
+        label: 'Количество кадров',
+        value: '121',
+        valueLabels: { '81': '81', '100': '100', '121': '121' },
+      },
+      resolution: {
+        id: 'resolution',
+        label: 'Разрешение',
+        value: '720p',
+        valueLabels: { '480p': '480p', '720p': '720p' },
+      },
+      framesPerSecond: {
+        id: 'framesPerSecond',
+        label: 'Частота кадров',
+        value: '16',
+        valueLabels: { '16': '16', '24': '24', '30': '30' },
+      },
+    },
+  },
 } as const satisfies Record<string, Model>
 
 export type Models = typeof models

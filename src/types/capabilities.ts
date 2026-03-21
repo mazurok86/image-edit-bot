@@ -11,4 +11,7 @@ export type Capabilities = {
   size?: CapabilityBase<'size', '2K' | '4K'>
   mode?: CapabilityBase<'mode', 'standard' | 'pro'>
   characterOrientation?: CapabilityBase<'characterOrientation', 'image' | 'video'>
+  numFrames?: CapabilityBase<'numFrames', '81' | '100' | '121'>
+  resolution?: CapabilityBase<'resolution', '480p' | '720p'>
+  framesPerSecond?: CapabilityBase<'framesPerSecond', '16' | '24' | '30'>
 }
