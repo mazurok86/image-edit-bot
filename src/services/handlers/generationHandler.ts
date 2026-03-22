@@ -102,7 +102,7 @@ export class GenerationHandler extends Handler {
     keyboard.push([{ text: BOT_TEXTS.MODEL_SETTINGS }])
     keyboard.push([{ text: BOT_TEXTS.BACK }])
 
-    await this.ctx.sendMessage(chat.id, BOT_TEXTS.FILES_CLEARED, {
+    await this.ctx.sendMessage(chat.id, BOT_TEXTS.CLEARED, {
       reply_markup: {
         keyboard,
         resize_keyboard: true,
@@ -127,16 +127,15 @@ export class GenerationHandler extends Handler {
     if (!hasImages && !hasVideo) {
       text = BOT_TEXTS.FILES_REQUIRED
     } else {
+      text += `${BOT_TEXTS.ACCEPTED}\n`
       if (hasImages) {
         text += `${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}\n`
       }
       if (hasVideo) {
         text += `${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}\n`
       }
-      if (imagesLength >= model.maxImages && videosLength >= model.maxVideo) {
+      if (imagesLength >= model.minImages && videosLength >= model.minVideo && model.requirePrompt && chat.prompt === '') {
         text += `\n${BOT_TEXTS.ENTER_PROMPT}`
-      } else {
-        text += `\n${BOT_TEXTS.UPLOAD_MORE}`
       }
     }
 
