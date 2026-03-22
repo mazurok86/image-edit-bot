@@ -164,7 +164,6 @@ export class BotService implements BotContext {
 
     if (text === BOT_TEXTS.START_GENERATION) {
       await this.generationHandler.generate(chat, messageId)
-      this.schedulePrompt(chat, 500)
       return
     }
 
