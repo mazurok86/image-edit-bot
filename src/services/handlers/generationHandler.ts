@@ -2,14 +2,15 @@ import type { KeyboardButton } from 'node-telegram-bot-api'
 import { BOT_TEXTS } from '../../constants/botTexts.js'
 import { escapeMarkdownV2, mapReplicateError } from '../../helpers/stringHelpers.js'
 import { ReplicateApiError } from '../../errors/ReplicateApiError.js'
-import { getModel } from '../../models/registry.js'
+import { getModel, getModelCapabilities } from '../../models/registry.js'
 import type { ModelKey } from '../../models/registry.js'
 import type { FileOutput } from '../../types/fileOutput.js'
 import type { Files } from '../../types/files.js'
 import type { ChatFile } from '../../types/chatFile.js'
 import { Handler } from './handler.js'
 import type { ChatStore } from '../../state/chatStore.js'
-import type { ModelCapabilitiesValue } from '../../types/model.js'
+import type { ModelCapabilities, ModelCapabilitiesValue } from '../../types/model.js'
+import { recordToEntries } from '../../helpers/arrayHelpers.js'
 
 export class GenerationHandler extends Handler {
   async generate(chat: ChatStore, messageId: number): Promise<void> {
@@ -62,7 +63,13 @@ export class GenerationHandler extends Handler {
       }
 
       const elapsedSec = Math.round((Date.now() - startedAt) / 1000)
-      await this.ctx.sendMessage(chat.id, `${BOT_TEXTS.GENERATION_DONE} \\(${elapsedSec} сек\\.\\)`)
+      const capabilities = getModelCapabilities(modelKey)
+      const optionsLines = this.buildOptions(options, capabilities)
+      const doneText = optionsLines
+        ? `${BOT_TEXTS.GENERATION_DONE} \\(${elapsedSec} сек\\.\\)\n\n${optionsLines}`
+        : `${BOT_TEXTS.GENERATION_DONE} \\(${elapsedSec} сек\\.\\)`
+
+      await this.ctx.sendMessage(chat.id, doneText)
     } catch (e: unknown) {
       console.log(`[${chat.id}] Generation failed.`)
       console.log(e)
@@ -159,6 +166,18 @@ export class GenerationHandler extends Handler {
     files: Files,
   ): Promise<FileOutput[]> {
     return this.ctx.runners[modelKey](prompt, files, options)
+  }
+
+  private buildOptions<M extends ModelKey>(options: Readonly<ModelCapabilitiesValue<M>>, capabilities: ModelCapabilities<M>): string {
+    const optionsLines = recordToEntries(options)
+      .map(([key, value]) => {
+        const cap = capabilities[key]
+        const valueLabel = cap.valueLabels[value]
+        return `${escapeMarkdownV2(String(cap.label))}: ${escapeMarkdownV2(String(valueLabel))}`
+      })
+      .filter((line): line is string => line !== null)
+      .join('\n')
+    return optionsLines
   }
 
   private async uploadChatFiles(files: readonly ChatFile[]): Promise<ChatFile[]> {
