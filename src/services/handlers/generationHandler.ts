@@ -125,17 +125,21 @@ export class GenerationHandler extends Handler {
 
     let text = ''
     if (!hasImages && !hasVideo) {
-      text = BOT_TEXTS.FILES_REQUIRED
+      text += BOT_TEXTS.FILES_REQUIRED
     } else {
-      text += `${BOT_TEXTS.ACCEPTED}\n`
-      if (hasImages) {
-        text += `${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}\n`
-      }
-      if (hasVideo) {
-        text += `${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}\n`
-      }
-      if (imagesLength >= model.minImages && videosLength >= model.minVideo && model.requirePrompt && chat.prompt === '') {
-        text += `\n${BOT_TEXTS.ENTER_PROMPT}`
+      text += BOT_TEXTS.ACCEPTED
+      const needPrompt = imagesLength >= model.minImages && videosLength >= model.minVideo && model.requirePrompt && chat.prompt === ''
+      if (hasImages || hasVideo || needPrompt) {
+        text += `\n`
+        if (hasImages) {
+          text += `\n${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}`
+        }
+        if (hasVideo) {
+          text += `\n${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}`
+        }
+        if (needPrompt) {
+          text += `\n${BOT_TEXTS.ENTER_PROMPT}`
+        }
       }
     }
 
