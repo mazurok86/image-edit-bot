@@ -30,4 +30,5 @@ export const BOT_TEXTS = {
   UPLOADED_IMAGES: '🖼️ *Загружено изображений:* ',
   UPLOADED_VIDEOS: '🎬 *Загружено видео:* ',
   START_GENERATION: '✨ Создать',
+  GENERATION_DONE: '✅ *Готово*',
 } as const

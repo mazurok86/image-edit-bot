@@ -9,6 +9,7 @@ import type { Files } from '../../types/files.js'
 import type { ChatFile } from '../../types/chatFile.js'
 import { Handler } from './handler.js'
 import type { ChatStore } from '../../state/chatStore.js'
+import type { ModelCapabilitiesValue } from '../../types/model.js'
 
 export class GenerationHandler extends Handler {
   async generate(chat: ChatStore, messageId: number): Promise<void> {
@@ -39,22 +40,29 @@ export class GenerationHandler extends Handler {
     }, 5000)
 
     const model = getModel(modelKey)
+    const startedAt = Date.now()
 
     try {
       await this.ctx.sendMessage(chat.id, `${BOT_TEXTS.USING_MODEL}${escapeMarkdownV2(model.name)}`)
       chat.files = await this.uploadChatFiles(chat.files)
+      const images = chat.images
+      const videos = chat.videos
 
       const translatedPrompt = await this.ctx.yandexTranslateService.translate(chat.prompt)
+      const options = chat.getModelOptions(modelKey)
 
-      const files = await this.invokeRunner(chat, modelKey, translatedPrompt, {
-        images: chat.images,
-        videos: chat.videos,
+      const files = await this.invokeRunner(options, modelKey, translatedPrompt, {
+        images,
+        videos,
       })
 
       for (const { buffer, filename, contentType } of files) {
         await this.ctx.bot.sendChatAction(chat.id, 'upload_document')
         await this.ctx.bot.sendDocument(chat.id, buffer, {}, { filename, contentType })
       }
+
+      const elapsedSec = Math.round((Date.now() - startedAt) / 1000)
+      await this.ctx.sendMessage(chat.id, `${BOT_TEXTS.GENERATION_DONE} \\(${elapsedSec} сек\\.\\)`)
     } catch (e: unknown) {
       console.log(`[${chat.id}] Generation failed.`)
       console.log(e)
@@ -144,8 +152,12 @@ export class GenerationHandler extends Handler {
     })
   }
 
-  private invokeRunner<M extends ModelKey>(chat: ChatStore, modelKey: M, prompt: string, files: Files): Promise<FileOutput[]> {
-    const options = chat.getModelOptions(modelKey)
+  private invokeRunner<M extends ModelKey>(
+    options: Readonly<ModelCapabilitiesValue<M>>,
+    modelKey: M,
+    prompt: string,
+    files: Files,
+  ): Promise<FileOutput[]> {
     return this.ctx.runners[modelKey](prompt, files, options)
   }
 
