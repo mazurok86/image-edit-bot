@@ -13,15 +13,19 @@ export class ReplicateService {
     this.replicate = new Replicate({ auth })
   }
 
-  private async run(...args: Parameters<typeof this.replicate.run>): ReturnType<typeof this.replicate.run> {
+  private async wrapReplicateError<T>(fn: () => Promise<T>): Promise<T> {
     try {
-      return await this.replicate.run(...args)
+      return await fn()
     } catch (e) {
       if (e instanceof Error) {
         throw new ReplicateApiError(e.message)
       }
       throw e
     }
+  }
+
+  private run(...args: Parameters<typeof this.replicate.run>): ReturnType<typeof this.replicate.run> {
+    return this.wrapReplicateError(() => this.replicate.run(...args))
   }
 
   async uploadHeicImage(url: string): Promise<string> {
@@ -35,7 +39,7 @@ export class ReplicateService {
       format: 'JPEG',
       quality: 1,
     })
-    const file = await this.replicate.files.create(new Blob([output], { type: 'image/jpeg' }))
+    const file = await this.wrapReplicateError(() => this.replicate.files.create(new Blob([output], { type: 'image/jpeg' })))
     return file.urls.get
   }
 

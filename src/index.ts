@@ -11,6 +11,8 @@ dotenv.config()
 if (process.env.REPLICATE_AUTH === undefined) throw new Error('REPLICATE_AUTH is missing')
 if (process.env.TELEGRAM_BOT_TOKEN === undefined) throw new Error('TELEGRAM_BOT_TOKEN is missing')
 if (process.env.TELEGRAM_BASE_API_URL === undefined) throw new Error('TELEGRAM_BASE_API_URL is missing')
+if (process.env.TELEGRAM_ADMIN_BOT_TOKEN === undefined) throw new Error('TELEGRAM_ADMIN_BOT_TOKEN is missing')
+if (process.env.TELEGRAM_ADMIN_CHAT_ID === undefined) throw new Error('TELEGRAM_ADMIN_CHAT_ID is missing')
 if (process.env.YANDEX_TRANSLATE_FOLDER_ID === undefined) throw new Error('YANDEX_TRANSLATE_FOLDER_ID is missing')
 if (process.env.YANDEX_TRANSLATE_API_KEY === undefined) throw new Error('YANDEX_TRANSLATE_API_KEY is missing')
 if (process.env.ALLOWED_CHAT_IDS === undefined) throw new Error('ALLOWED_CHAT_IDS is missing')
@@ -18,16 +20,22 @@ if (process.env.REDIS_URL === undefined) throw new Error('REDIS_URL is missing')
 if (process.env.REDIS_KEY_PREFIX === undefined) throw new Error('REDIS_KEY_PREFIX is missing')
 
 const allowedChatIds = process.env.ALLOWED_CHAT_IDS.split(',').map((id) => Number(id.trim()))
+const adminChatId = Number(process.env.TELEGRAM_ADMIN_CHAT_ID.trim())
+
+if (Number.isNaN(adminChatId)) {
+  throw new Error('TELEGRAM_ADMIN_CHAT_ID is not a number')
+}
 
 if (allowedChatIds.length === 0) {
   throw new Error('ALLOWED_CHAT_IDS is empty')
 }
 
 const bot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN, { polling: true, baseApiUrl: process.env.TELEGRAM_BASE_API_URL })
+const adminBot = new TelegramBot(process.env.TELEGRAM_ADMIN_BOT_TOKEN, { polling: false })
 const yandexTranslateService = new YandexTranslateService(process.env.YANDEX_TRANSLATE_FOLDER_ID, process.env.YANDEX_TRANSLATE_API_KEY)
 const replicateService = new ReplicateService(process.env.REPLICATE_AUTH)
 const redisService = new RedisService(process.env.REDIS_URL, process.env.REDIS_KEY_PREFIX)
 await redisService.connect()
 const store = new ChatRegistry(redisService)
-const botService = new BotService(bot, store, yandexTranslateService, replicateService, allowedChatIds)
+const botService = new BotService(bot, store, yandexTranslateService, replicateService, allowedChatIds, adminBot, adminChatId)
 botService.start()

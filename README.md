@@ -49,6 +49,8 @@ cp .env.example .env   # заполнить значения
 | `REPLICATE_AUTH` | API-токен Replicate |
 | `TELEGRAM_BOT_TOKEN` | Токен Telegram-бота |
 | `TELEGRAM_BASE_API_URL` | Базовый URL Telegram API (`https://api.telegram.org`) |
+| `TELEGRAM_ADMIN_BOT_TOKEN` | Токен технического (админского) Telegram-бота для отправки ошибок |
+| `TELEGRAM_ADMIN_CHAT_ID` | Chat ID админского чата, куда отправляются необработанные ошибки Replicate API |
 | `TELEGRAM_LOCAL_FILE_BASE_URL` | Базовый URL локального сервера файлов Telegram |
 | `YANDEX_TRANSLATE_FOLDER_ID` | Folder ID в Yandex Cloud для перевода |
 | `YANDEX_TRANSLATE_API_KEY` | API-ключ Yandex Cloud |

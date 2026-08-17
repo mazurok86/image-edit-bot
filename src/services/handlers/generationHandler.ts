@@ -75,6 +75,7 @@ export class GenerationHandler extends Handler {
       console.log(e)
       if (e instanceof ReplicateApiError) {
         await this.ctx.sendMessage(chat.id, mapReplicateError(e.message))
+        await this.ctx.reportError(`[${chat.id}] ${model.name}\n${e.message}`)
       } else {
         await this.ctx.sendMessage(chat.id, BOT_TEXTS.ERROR)
       }

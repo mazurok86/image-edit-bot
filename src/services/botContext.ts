@@ -14,4 +14,5 @@ export interface BotContext {
   sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message>
   isReady(chat: ChatStore): boolean
   hasInputs(chat: ChatStore): boolean
+  reportError(text: string): Promise<void>
 }

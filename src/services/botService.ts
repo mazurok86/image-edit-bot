@@ -20,6 +20,8 @@ export class BotService implements BotContext {
   readonly yandexTranslateService: YandexTranslateService
   readonly replicateService: ReplicateService
   private readonly allowedChatIds: number[]
+  private readonly adminBot: TelegramBot
+  private readonly adminChatId: number
   readonly runners: ModelRunners
 
   private readonly fileHandler: FileHandler
@@ -33,8 +35,12 @@ export class BotService implements BotContext {
     yandexTranslateService: YandexTranslateService,
     replicateService: ReplicateService,
     allowedChatIds: number[],
+    adminBot: TelegramBot,
+    adminChatId: number,
   ) {
     this.allowedChatIds = allowedChatIds
+    this.adminBot = adminBot
+    this.adminChatId = adminChatId
     this.bot = bot
     this.store = store
     this.yandexTranslateService = yandexTranslateService
@@ -89,6 +95,14 @@ export class BotService implements BotContext {
       ...options,
       parse_mode: 'MarkdownV2',
     })
+  }
+
+  async reportError(text: string): Promise<void> {
+    try {
+      await this.adminBot.sendMessage(this.adminChatId, text)
+    } catch (err: unknown) {
+      console.error(`Failed to report error to admin chat ${this.adminChatId}:`, err)
+    }
   }
 
   schedulePrompt(chat: ChatStore, delay: number = 0): void {
