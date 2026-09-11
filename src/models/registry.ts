@@ -80,8 +80,8 @@ const models = {
     },
   },
   seedream: {
-    id: 'bytedance/seedream-4',
-    name: '🧿 Seedream v4',
+    id: 'bytedance/seedream-4.5',
+    name: '🧿 Seedream v4.5',
     minImages: 1,
     maxImages: 4,
     minVideo: 0,

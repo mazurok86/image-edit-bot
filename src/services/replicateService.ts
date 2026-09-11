@@ -129,16 +129,14 @@ export class ReplicateService {
     ]
   }
 
-  async runSeedream4(prompt: string, images: string[], options: ModelCapabilitiesValue<'seedream'>): Promise<FileOutput[]> {
+  async runSeedream(prompt: string, images: string[], options: ModelCapabilitiesValue<'seedream'>): Promise<FileOutput[]> {
     const input = {
       prompt,
       image_input: images,
-      size: '4K',
-      width: 2048,
-      height: 2048,
+      size: options.size,
       aspect_ratio: options.aspectRatio,
-      enhance_prompt: true,
       sequential_image_generation: 'disabled',
+      disable_safety_checker: true,
     }
     const id = getModel('seedream').id
 

@@ -55,7 +55,7 @@ export class BotService implements BotContext {
         return await this.replicateService.runFlux(prompt, files.images[files.images.length - 1], settings)
       },
       seedream: async (prompt, files, settings): Promise<FileOutput[]> => {
-        return await this.replicateService.runSeedream4(prompt, files.images, settings)
+        return await this.replicateService.runSeedream(prompt, files.images, settings)
       },
       nanoBanana: async (prompt, files, settings): Promise<FileOutput[]> => {
         return await this.replicateService.runNanoBananaPro(prompt, files.images, settings)

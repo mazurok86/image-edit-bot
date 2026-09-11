@@ -22,7 +22,7 @@ Telegram-бот для редактирования изображений и г
 | `qwen` | `qwen/qwen-image-edit-plus` | Редактирование изображений (1–4) | Соотношение сторон |
 | `flux1` | `black-forest-labs/flux-kontext-pro` | Редактирование изображений | Соотношение сторон |
 | `flux2` | `black-forest-labs/flux-2-pro` | Редактирование изображений (1–4) | Соотношение сторон |
-| `seedream` | `bytedance/seedream-4` | Редактирование изображений (1–4) | Соотношение сторон, размер (2K/4K) |
+| `seedream` | `bytedance/seedream-4.5` | Редактирование изображений (1–4) | Соотношение сторон, размер (2K/4K) |
 | `nanoBanana` | `google/nano-banana-pro` | Редактирование изображений (1–4) | Соотношение сторон |
 | `kling` | `kwaivgi/kling-v2.1` | Видео из изображения (5s, 720p) | Режим (standard/pro) |
 | `klingMC` | `kwaivgi/kling-v2.6-motion-control` | Видео с motion control (изображение + видео) | Ориентация персонажа |
