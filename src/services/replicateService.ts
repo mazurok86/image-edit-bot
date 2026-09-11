@@ -265,4 +265,39 @@ export class ReplicateService {
       },
     ]
   }
+
+  async runSeedance25(
+    prompt: string,
+    images: string[],
+    videos: string[],
+    audios: string[],
+    options: ModelCapabilitiesValue<'seedance25'>,
+  ): Promise<FileOutput[]> {
+    const input = {
+      prompt,
+      reference_images: images,
+      reference_videos: videos,
+      reference_audios: audios,
+      duration: Number(options.duration),
+      resolution: options.resolution,
+      aspect_ratio: options.aspectRatio,
+      generate_audio: options.generateAudio === 'true',
+      watermark: false,
+      output_format: 'mp4',
+    }
+    const id = getModel('seedance25').id
+
+    const output = (await this.run(id, {
+      input,
+    })) as ReadableStream
+    const buf = await this.readOutput(output)
+
+    return [
+      {
+        buffer: buf,
+        filename: `seedance_${Date.now()}.mp4`,
+        contentType: 'video/mp4',
+      },
+    ]
+  }
 }

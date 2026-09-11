@@ -1,6 +1,6 @@
 import path from 'path'
-import type { Document, PhotoSize, Video } from 'node-telegram-bot-api'
-import { isAllowedImage, isAllowedVideo } from '../../helpers/fileHelpers.js'
+import type { Audio, Document, PhotoSize, Video, Voice } from 'node-telegram-bot-api'
+import { isAllowedAudio, isAllowedImage, isAllowedVideo } from '../../helpers/fileHelpers.js'
 import { BOT_TEXTS } from '../../constants/botTexts.js'
 import { Handler } from './handler.js'
 import type { ChatStore } from '../../state/chatStore.js'
@@ -52,7 +52,7 @@ export class FileHandler extends Handler {
       if (mime_type === undefined || file_size === undefined) {
         throw new Error()
       }
-      if (!isAllowedImage(mime_type) && !isAllowedVideo(mime_type, file_size)) {
+      if (!isAllowedImage(mime_type) && !isAllowedVideo(mime_type, file_size) && !isAllowedAudio(mime_type, file_size)) {
         throw new Error()
       }
       const fileLocation = await this.getFileLocation(file_id)
@@ -97,6 +97,25 @@ export class FileHandler extends Handler {
     } catch {
       console.log(`[${chat.id}] Invalid video.`)
       await this.ctx.sendMessage(chat.id, BOT_TEXTS.INVALID_VIDEO)
+    }
+  }
+
+  /** Handles both audio messages and voice notes (Telegram sends voice notes as audio/ogg). */
+  async handleAudio(chat: ChatStore, audio: Audio | Voice): Promise<void> {
+    try {
+      const { mime_type, file_id, file_size } = audio
+      if (mime_type === undefined || file_size === undefined) {
+        throw new Error()
+      }
+      if (!isAllowedAudio(mime_type, file_size)) {
+        throw new Error()
+      }
+      const fileLocation = await this.getFileLocation(file_id)
+      chat.addFile(fileLocation.url, mime_type)
+      console.log(`[${chat.id}] Audio added.`)
+    } catch {
+      console.log(`[${chat.id}] Invalid audio.`)
+      await this.ctx.sendMessage(chat.id, BOT_TEXTS.INVALID_AUDIO)
     }
   }
 }

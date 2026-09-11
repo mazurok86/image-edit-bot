@@ -74,6 +74,9 @@ export class BotService implements BotContext {
       wan22: async (prompt, files, settings): Promise<FileOutput[]> => {
         return await this.replicateService.runWan22(prompt, files.images[files.images.length - 1], settings)
       },
+      seedance25: async (prompt, files, settings): Promise<FileOutput[]> => {
+        return await this.replicateService.runSeedance25(prompt, files.images, files.videos, files.audios, settings)
+      },
     }
 
     this.fileHandler = new FileHandler(this)
@@ -124,7 +127,7 @@ export class BotService implements BotContext {
 
     const model = getModel(modelKey)
 
-    if (chat.images.length < model.minImages || chat.videos.length < model.minVideo) {
+    if (chat.images.length < model.minImages || chat.videos.length < model.minVideo || chat.audios.length < model.minAudio) {
       return false
     }
 
@@ -136,7 +139,7 @@ export class BotService implements BotContext {
   }
 
   hasInputs(chat: ChatStore): boolean {
-    if (chat.images.length === 0 && chat.videos.length === 0 && chat.prompt === '') {
+    if (chat.images.length === 0 && chat.videos.length === 0 && chat.audios.length === 0 && chat.prompt === '') {
       return false
     }
 
@@ -155,7 +158,7 @@ export class BotService implements BotContext {
 
     const chat = await this.store.get(chatId)
 
-    const { text, caption, document, photo, video } = msg
+    const { text, caption, document, photo, video, audio, voice } = msg
 
     if (text === BOT_TEXTS.START) {
       console.log(`[${chatId}] Start.`)
@@ -194,6 +197,14 @@ export class BotService implements BotContext {
 
     if (video) {
       await this.fileHandler.handleVideo(chat, video)
+    }
+
+    if (audio) {
+      await this.fileHandler.handleAudio(chat, audio)
+    }
+
+    if (voice) {
+      await this.fileHandler.handleAudio(chat, voice)
     }
 
     const prompt = text === undefined ? (caption === undefined ? '' : caption.trim()) : text.trim()

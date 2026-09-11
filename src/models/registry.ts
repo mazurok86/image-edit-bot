@@ -15,6 +15,8 @@ type Model = {
   maxImages: number
   minVideo: number
   maxVideo: number
+  minAudio: number
+  maxAudio: number
   requirePrompt: boolean
   capabilities: Capabilities
 }
@@ -27,6 +29,8 @@ const models = {
     maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       aspectRatio: {
@@ -44,6 +48,8 @@ const models = {
     maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       aspectRatio: {
@@ -61,6 +67,8 @@ const models = {
     maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       aspectRatio: {
@@ -78,6 +86,8 @@ const models = {
     maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       aspectRatio: {
@@ -101,6 +111,8 @@ const models = {
     maxImages: 4,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       aspectRatio: {
@@ -118,6 +130,8 @@ const models = {
     maxImages: 1,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       mode: {
@@ -135,6 +149,8 @@ const models = {
     maxImages: 1,
     minVideo: 1,
     maxVideo: 1,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: false,
     capabilities: {
       characterOrientation: {
@@ -152,6 +168,8 @@ const models = {
     maxImages: 1,
     minVideo: 0,
     maxVideo: 0,
+    minAudio: 0,
+    maxAudio: 0,
     requirePrompt: true,
     capabilities: {
       numFrames: {
@@ -171,6 +189,43 @@ const models = {
         label: 'Частота кадров',
         value: '16',
         valueLabels: { '16': '16', '24': '24', '30': '30' },
+      },
+    },
+  },
+  seedance25: {
+    id: 'bytedance/seedance-2.5',
+    name: '📼 Seedance 2.5',
+    minImages: 0,
+    maxImages: 30,
+    minVideo: 0,
+    maxVideo: 10,
+    minAudio: 0,
+    maxAudio: 10,
+    requirePrompt: true,
+    capabilities: {
+      duration: {
+        id: 'duration',
+        label: 'Длительность',
+        value: '5',
+        valueLabels: { '-1': 'Авто', '5': '5 сек', '10': '10 сек', '15': '15 сек', '20': '20 сек', '30': '30 сек' },
+      },
+      aspectRatio: {
+        id: 'aspectRatio',
+        label: 'Соотношение сторон',
+        value: 'adaptive',
+        valueLabels: { adaptive: 'Авто', '16:9': '16:9', '4:3': '4:3', '1:1': '1:1', '3:4': '3:4', '9:16': '9:16', '21:9': '21:9' },
+      },
+      resolution: {
+        id: 'resolution',
+        label: 'Разрешение',
+        value: '720p',
+        valueLabels: { '480p': '480p', '720p': '720p' },
+      },
+      generateAudio: {
+        id: 'generateAudio',
+        label: 'Звук',
+        value: 'true',
+        valueLabels: { true: 'Вкл', false: 'Выкл' },
       },
     },
   },

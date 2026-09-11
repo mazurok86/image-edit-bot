@@ -1,4 +1,4 @@
-import { isAllowedImage, isAllowedVideo } from '../helpers/fileHelpers.js'
+import { isAllowedAudio, isAllowedImage, isAllowedVideo } from '../helpers/fileHelpers.js'
 import { isRecord } from '../helpers/generalHelpers.js'
 import { getModelCapabilityValue, getModelCapabilitiesValue, type ModelKey, isModelKey } from '../models/registry.js'
 import type { RedisService } from '../services/redisService.js'
@@ -128,6 +128,16 @@ export class ChatStore {
       }
     }
     return videos
+  }
+
+  get audios(): string[] {
+    const audios = []
+    for (const { url, mimeType } of this.files) {
+      if (isAllowedAudio(mimeType)) {
+        audios.push(url)
+      }
+    }
+    return audios
   }
 
   private getStateModelOptions<M extends ModelKey>(modelKey: M): Readonly<ChatStateModel<M>> | undefined {

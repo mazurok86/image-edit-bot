@@ -48,6 +48,7 @@ export class GenerationHandler extends Handler {
       chat.files = await this.uploadChatFiles(chat.files)
       const images = chat.images
       const videos = chat.videos
+      const audios = chat.audios
 
       const translatedPrompt = await this.ctx.yandexTranslateService.translate(chat.prompt)
       const options = chat.getModelOptions(modelKey)
@@ -55,6 +56,7 @@ export class GenerationHandler extends Handler {
       const files = await this.invokeRunner(options, modelKey, translatedPrompt, {
         images,
         videos,
+        audios,
       })
 
       for (const { buffer, filename, contentType } of files) {
@@ -122,22 +124,33 @@ export class GenerationHandler extends Handler {
 
     const imagesLength = chat.images.length
     const videosLength = chat.videos.length
+    const audiosLength = chat.audios.length
     const hasImages = imagesLength > 0
     const hasVideo = videosLength > 0
+    const hasAudio = audiosLength > 0
+    const filesRequired = model.minImages > 0 || model.minVideo > 0 || model.minAudio > 0
 
     let text = ''
-    if (!hasImages && !hasVideo) {
+    if (!hasImages && !hasVideo && !hasAudio && filesRequired) {
       text += BOT_TEXTS.FILES_REQUIRED
     } else {
       text += BOT_TEXTS.ACCEPTED
-      const needPrompt = imagesLength >= model.minImages && videosLength >= model.minVideo && model.requirePrompt && chat.prompt === ''
-      if (hasImages || hasVideo || needPrompt) {
+      const needPrompt =
+        imagesLength >= model.minImages &&
+        videosLength >= model.minVideo &&
+        audiosLength >= model.minAudio &&
+        model.requirePrompt &&
+        chat.prompt === ''
+      if (hasImages || hasVideo || hasAudio || needPrompt) {
         text += `\n`
         if (hasImages) {
           text += `\n${BOT_TEXTS.UPLOADED_IMAGES}${imagesLength}`
         }
         if (hasVideo) {
           text += `\n${BOT_TEXTS.UPLOADED_VIDEOS}${videosLength}`
+        }
+        if (hasAudio) {
+          text += `\n${BOT_TEXTS.UPLOADED_AUDIOS}${audiosLength}`
         }
         if (needPrompt) {
           text += `\n${BOT_TEXTS.ENTER_PROMPT}`

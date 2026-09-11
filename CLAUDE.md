@@ -33,33 +33,34 @@ Copy `.env.example` to `.env` and fill in all values. All of the following varia
 
 ## Architecture
 
-This is a Telegram bot that lets users edit images and generate videos using AI models on Replicate. The entry point is `src/index.ts`, which wires together the services and starts polling.
+Telegram bot: a user sends photos/videos/audio/documents plus a text prompt, picks a model, optionally tweaks per-model settings via inline buttons, and receives the generated files back as documents. The entry point is `src/index.ts`: it validates env, wires the services, connects to Redis and starts polling.
 
 **Request flow:**
-1. User sends a photo/video/document + text prompt via Telegram
-2. `BotService` handles all Telegram events and per-chat state
-3. When a model button is tapped, `BotService.uploadChatFiles()` converts any HEIC files: fetches, converts to JPEG via `heic-convert`, uploads to Replicate Files API, and replaces the entry in `chat.files` in-place
-4. `BotService` calls `YandexTranslateService` to translate any Russian (Cyrillic) prompts to English
-5. `ReplicateService` runs the chosen Replicate model and returns file buffers
-6. Results are sent back as Telegram documents
+1. `BotService` (`src/services/botService.ts`) receives every message and callback query, rejects chats outside `ALLOWED_CHAT_IDS`, loads the chat's `ChatStore` via `ChatRegistry`, and delegates to the handlers in `src/services/handlers/`:
+   - `ModelSelectionHandler` — reply-keyboard model picker; a button label maps back to a model key via `getModelKeyByName`
+   - `ModelSettingsHandler` — inline-keyboard settings menu; callback data is `set#<capKey>`, `choose#<capKey>#<value>` or `back`
+   - `FileHandler` — accepts photos, videos, audio messages, voice notes and documents; resolves Telegram file URLs, including a local Bot API server (`TELEGRAM_LOCAL_FILE_BASE_URL`)
+   - `GenerationHandler` — the status reply after every input (`handlePrompt`, debounced via `ChatStore.scheduleResponse`), the "Создать" flow (`generate`) and "Очистить"
+2. Before generation `GenerationHandler.uploadChatFiles()` converts HEIC files: `ReplicateService.uploadHeicImage()` fetches the file, converts it to JPEG via `heic-convert`, uploads it to the Replicate Files API and rewrites the entry in `chat.files`
+3. `YandexTranslateService` translates the prompt to English when it contains Cyrillic
+4. The model's runner from `BotService.runners` calls the matching `ReplicateService.run*` method with `{ images, videos, audios }` (`src/types/files.ts`) and the chat's settings; the method returns `FileOutput[]`, which are sent as Telegram documents
+5. Errors: `ReplicateService` wraps SDK failures (including output download) in `ReplicateApiError`; the user gets a mapped message (`mapReplicateError`) and the raw text goes to the admin chat via `ErrorReporterService` (redacts bot tokens, truncates to 4096 chars, never throws)
 
-**Key services:**
-- `src/services/botService.ts` — core message handler; manages state flow, keyboard menus, file handling, HEIC upload, and generation lifecycle
-- `src/services/replicateService.ts` — one method per Replicate model (Flux, Seedream, NanoBananaPro, Kling, Kling Motion Control); also has `uploadHeicImage(url)` which fetches a HEIC URL, converts to JPEG, uploads via `replicate.files.create`, and returns a Replicate file URL
-- `src/services/yandexTranslateService.ts` — translates Cyrillic prompts to English before inference; skips translation if no Cyrillic detected
-- `src/services/errorReporterService.ts` — sends raw Replicate error reports to the admin chat via the technical bot; redacts bot tokens, truncates to Telegram's 4096-char limit, and never throws
-- `src/state/chatStore.ts` — in-memory per-chat state (`ChatState`); files auto-expire after 1 hour of inactivity
+**Model registry (`src/models/registry.ts`):** every model is one declarative entry: Replicate `id`, keyboard `name`, `minImages`/`maxImages`, `minVideo`/`maxVideo`, `minAudio`/`maxAudio`, `requirePrompt` and `capabilities` (user-adjustable settings). Only the `min*` limits and `requirePrompt` are enforced (`BotService.isReady`); `max*` are informational. Files of a kind a model does not use are accepted and ignored by its runner. `ModelKey`, `Models` and all helpers (`getModel`, `getModelCapabilities`, `getModelKeyByName`, `isModelKey`, …) derive from this object, so a new key propagates everywhere, including `ModelRunners` and the Redis state types.
 
-**File types:**
-- `src/types/chatFile.ts` — `ChatFile = { url: string, mimeType: FileMimeType }` — represents a user-uploaded file in chat state
-- `src/types/fileMimeType.ts` — union of allowed MIME types
-- `src/helpers/chatHelpers.ts` — `getChatImages(chat)` / `getChatVideos(chat)` — filter `chat.files` by MIME type and return URL arrays
+**Capabilities:** `src/types/capabilities.ts` is the shared vocabulary: each key (`aspectRatio`, `resolution`, `duration`, `generateAudio`, …) is a `CapabilityBase` with an `id` equal to the key, a Russian `label`, a default `value` and `valueLabels`. Values are always strings (convert with `Number()` or compare with `'true'` in the runner). A model lists only the values it supports (`valueLabels` is `Partial`), and the exact per-model types in `src/types/model.ts` are inferred from the registry literal. User choices are stored per model in `ChatStore` and merged over the defaults by `getModelOptions`.
 
-**Models (`src/models/index.ts`):**
-- `REPLICATE_MODELS` — actual Replicate model IDs (e.g. `black-forest-labs/flux-kontext-pro`)
-- `BOT_MODELS` — display labels shown in Telegram keyboard buttons; these string values are also used as the routing key in `BotService.modelMap`
+**Adding a new model:**
+1. Add an entry to `models` in `src/models/registry.ts`; declare any new capability keys in `Capabilities` first.
+2. Add a `run<Model>` method in `ReplicateService`; go through `this.run` and `this.readOutput` so failures become `ReplicateApiError`.
+3. Add a runner to `this.runners` in the `BotService` constructor (`ModelRunners` makes it mandatory).
+4. Add a row to the models table in `README.md`.
 
-**Adding a new model:** add entries to both `REPLICATE_MODELS` and `BOT_MODELS`, add a method in `ReplicateService`, and add a mapping in the `BotService` constructor's `modelMap`.
+**State:** `ChatStore` (`src/state/chatStore.ts`) holds the prompt, files, selected model, per-model settings and settings-message ids; every mutation is persisted to Redis through `RedisService` (keys prefixed by `REDIS_KEY_PREFIX`). Files expire 1 hour after the first upload of a batch (later uploads do not extend it; "Очистить" resets it). `busy` and the debounce timer are in-memory only. `ChatRegistry` caches one `ChatStore` per chat id.
+
+**Files:** `src/types/fileMimeType.ts` lists the allowed image, video and audio MIME types; `src/helpers/fileHelpers.ts` has `isAllowedImage`/`isAllowedVideo`/`isAllowedAudio` (video and audio are limited to 20 MB). `ChatStore.images`/`videos`/`audios` filter `chat.files` by MIME type and return URL arrays.
+
+**Bot texts:** all user-facing strings live in `src/constants/botTexts.ts` and are MarkdownV2; escape dynamic text with `escapeMarkdownV2`.
 
 **Deployment:** push to `main` triggers the GitHub Actions workflow (`.github/workflows/deploy.yml`), which lints, builds, rsyncs to the server, and reloads via PM2 (`ecosystem.config.cjs`).
 
