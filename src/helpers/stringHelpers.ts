@@ -21,3 +21,19 @@ export function mapReplicateError(msg: string): string {
   if (lower.includes('interrupted')) return BOT_TEXTS.ERROR_INTERRUPTED
   return BOT_TEXTS.ERROR
 }
+
+/** Telegram bot tokens (`<digits>:<35 url-safe chars>`) appear in file URLs that are passed to Replicate and may be echoed in its errors. */
+const TELEGRAM_BOT_TOKEN_PATTERN = /\d{6,12}:[A-Za-z0-9_-]{30,}/g
+
+export function redactBotTokens(text: string): string {
+  return text.replace(TELEGRAM_BOT_TOKEN_PATTERN, '<bot-token>')
+}
+
+/** Truncates by code point (not UTF-16 unit) so a surrogate pair is never split. */
+export function truncate(text: string, maxLength: number): string {
+  const chars = Array.from(text)
+  if (chars.length <= maxLength) {
+    return text
+  }
+  return `${chars.slice(0, maxLength - 1).join('')}…`
+}

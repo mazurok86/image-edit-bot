@@ -18,7 +18,7 @@ export class ReplicateService {
       return await fn()
     } catch (e) {
       if (e instanceof Error) {
-        throw new ReplicateApiError(e.message)
+        throw new ReplicateApiError(e.message, { cause: e })
       }
       throw e
     }
@@ -26,6 +26,11 @@ export class ReplicateService {
 
   private run(...args: Parameters<typeof this.replicate.run>): ReturnType<typeof this.replicate.run> {
     return this.wrapReplicateError(() => this.replicate.run(...args))
+  }
+
+  /** Output files are lazily fetched streams: the download itself can fail after `run` has resolved. */
+  private readOutput(output: ReadableStream): Promise<Buffer> {
+    return this.wrapReplicateError(() => buffer(output))
   }
 
   async uploadHeicImage(url: string): Promise<string> {
@@ -63,7 +68,7 @@ export class ReplicateService {
     let i = 0
     for (const output of outputs) {
       i++
-      const buf = Buffer.from(await buffer(output))
+      const buf = await this.readOutput(output)
       result.push({
         buffer: buf,
         filename: `qwen_${Date.now()}_${i}.jpg`,
@@ -89,7 +94,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {
@@ -113,7 +118,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {
@@ -145,7 +150,7 @@ export class ReplicateService {
     let i = 0
     for (const output of outputs) {
       i++
-      const buf = Buffer.from(await buffer(output))
+      const buf = await this.readOutput(output)
       result.push({
         buffer: buf,
         filename: `seedream_${Date.now()}_${i}.jpg`,
@@ -170,7 +175,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {
@@ -194,7 +199,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {
@@ -224,7 +229,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {
@@ -250,7 +255,7 @@ export class ReplicateService {
     const output = (await this.run(id, {
       input,
     })) as ReadableStream
-    const buf = Buffer.from(await buffer(output))
+    const buf = await this.readOutput(output)
 
     return [
       {

@@ -5,6 +5,7 @@ import type { ReplicateService } from './replicateService.js'
 import type { YandexTranslateService } from './yandexTranslateService.js'
 import type { ModelRunners } from '../types/model.js'
 import type { BotContext } from './botContext.js'
+import type { ErrorReporterService } from './errorReporterService.js'
 import { FileHandler } from './handlers/fileHandler.js'
 import { GenerationHandler } from './handlers/generationHandler.js'
 import { ModelSelectionHandler } from './handlers/modelSelectionHandler.js'
@@ -20,8 +21,7 @@ export class BotService implements BotContext {
   readonly yandexTranslateService: YandexTranslateService
   readonly replicateService: ReplicateService
   private readonly allowedChatIds: number[]
-  private readonly adminBot: TelegramBot
-  private readonly adminChatId: number
+  private readonly errorReporter: ErrorReporterService
   readonly runners: ModelRunners
 
   private readonly fileHandler: FileHandler
@@ -35,12 +35,10 @@ export class BotService implements BotContext {
     yandexTranslateService: YandexTranslateService,
     replicateService: ReplicateService,
     allowedChatIds: number[],
-    adminBot: TelegramBot,
-    adminChatId: number,
+    errorReporter: ErrorReporterService,
   ) {
     this.allowedChatIds = allowedChatIds
-    this.adminBot = adminBot
-    this.adminChatId = adminChatId
+    this.errorReporter = errorReporter
     this.bot = bot
     this.store = store
     this.yandexTranslateService = yandexTranslateService
@@ -86,8 +84,17 @@ export class BotService implements BotContext {
 
   public start(): void {
     console.log('Bot running...')
-    this.bot.on('callback_query', (query: CallbackQuery) => this.handleCallbackQuery(query))
-    this.bot.on('message', (msg: Message) => this.handleMessage(msg))
+    // EventEmitter drops returned promises; an unobserved rejection here would terminate the process.
+    this.bot.on('callback_query', (query: CallbackQuery) => {
+      this.handleCallbackQuery(query).catch((err: unknown) => {
+        console.error(`[${query.message?.chat.id ?? 'unknown'}] Failed to handle callback query:`, err)
+      })
+    })
+    this.bot.on('message', (msg: Message) => {
+      this.handleMessage(msg).catch((err: unknown) => {
+        console.error(`[${msg.chat.id}] Failed to handle message:`, err)
+      })
+    })
   }
 
   async sendMessage(chatId: number, text: string, options?: TelegramBot.SendMessageOptions): Promise<TelegramBot.Message> {
@@ -98,11 +105,7 @@ export class BotService implements BotContext {
   }
 
   async reportError(text: string): Promise<void> {
-    try {
-      await this.adminBot.sendMessage(this.adminChatId, text)
-    } catch (err: unknown) {
-      console.error(`Failed to report error to admin chat ${this.adminChatId}:`, err)
-    }
+    await this.errorReporter.report(text)
   }
 
   schedulePrompt(chat: ChatStore, delay: number = 0): void {

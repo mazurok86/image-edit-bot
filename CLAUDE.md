@@ -17,7 +17,7 @@ No test suite is configured.
 
 ## Environment Setup
 
-Copy `.env.example` to `.env` and fill in all values. All five variables are required at startup:
+Copy `.env.example` to `.env` and fill in all values. All of the following variables are required at startup (only `TELEGRAM_LOCAL_FILE_BASE_URL` is optional); chat IDs must be integers and the admin values must be non-empty:
 
 - `REPLICATE_AUTH` — Replicate API token
 - `TELEGRAM_BOT_TOKEN` — Telegram bot token
@@ -28,6 +28,8 @@ Copy `.env.example` to `.env` and fill in all values. All five variables are req
 - `YANDEX_TRANSLATE_FOLDER_ID` — Yandex Cloud folder ID for translation
 - `YANDEX_TRANSLATE_API_KEY` — Yandex Cloud API key
 - `ALLOWED_CHAT_IDS` — comma-separated list of permitted Telegram chat IDs
+- `REDIS_URL` — Redis connection URL
+- `REDIS_KEY_PREFIX` — prefix for all Redis keys
 
 ## Architecture
 
@@ -45,6 +47,7 @@ This is a Telegram bot that lets users edit images and generate videos using AI 
 - `src/services/botService.ts` — core message handler; manages state flow, keyboard menus, file handling, HEIC upload, and generation lifecycle
 - `src/services/replicateService.ts` — one method per Replicate model (Flux, Seedream, NanoBananaPro, Kling, Kling Motion Control); also has `uploadHeicImage(url)` which fetches a HEIC URL, converts to JPEG, uploads via `replicate.files.create`, and returns a Replicate file URL
 - `src/services/yandexTranslateService.ts` — translates Cyrillic prompts to English before inference; skips translation if no Cyrillic detected
+- `src/services/errorReporterService.ts` — sends raw Replicate error reports to the admin chat via the technical bot; redacts bot tokens, truncates to Telegram's 4096-char limit, and never throws
 - `src/state/chatStore.ts` — in-memory per-chat state (`ChatState`); files auto-expire after 1 hour of inactivity
 
 **File types:**

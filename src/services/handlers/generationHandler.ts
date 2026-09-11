@@ -74,8 +74,9 @@ export class GenerationHandler extends Handler {
       console.log(`[${chat.id}] Generation failed.`)
       console.log(e)
       if (e instanceof ReplicateApiError) {
+        // Fire-and-forget: reportError never throws, and the admin report must neither depend on nor delay the user notification.
+        void this.ctx.reportError(`[${chat.id}] ${model.name}\n${e.message}`)
         await this.ctx.sendMessage(chat.id, mapReplicateError(e.message))
-        await this.ctx.reportError(`[${chat.id}] ${model.name}\n${e.message}`)
       } else {
         await this.ctx.sendMessage(chat.id, BOT_TEXTS.ERROR)
       }
